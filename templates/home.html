@@ -1,0 +1,888 @@
+{% extends 'main.html' %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-danger text-center mt-3">{{ message }}</div>
+{% endif %}
+
+<style>
+  /* === FONT & COLOR SYSTEM === */
+  @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap");
+
+  :root {
+    --ink: #05060a;
+    --card: rgba(2, 9, 19, 0.7);
+    --card-strong: rgba(2, 9, 19, 0.86);
+    --glass: rgba(255, 255, 255, 0.06);
+    --accent: #00e0ff;
+    --accent-2: #ff5f6d;
+    --text: #e8edf2;
+    --muted: #a9b3c1;
+    --shadow: 0 15px 40px rgba(0, 0, 0, 0.55);
+  }
+
+  /* === PAGE BACKGROUND === */
+  body {
+    position: relative;
+    background: linear-gradient(145deg, rgba(0, 16, 32, 0.88), rgba(0, 41, 51, 0.88)),
+                url("https://d8tzmbmuvomgp.cloudfront.net/medialibrary/pce-content/the-exchange/images/234/rate-control-exchange-post.png")
+                no-repeat center center fixed;
+    background-size: cover;
+    color: var(--text);
+    font-family: "Manrope", "Times New Roman", Times, serif;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 15% 20%, rgba(0, 224, 255, 0.18), transparent 35%),
+                radial-gradient(circle at 80% 10%, rgba(255, 95, 109, 0.14), transparent 30%),
+                radial-gradient(circle at 70% 75%, rgba(0, 224, 255, 0.12), transparent 35%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* === GENERAL TEXT === */
+  h1, h2, h3, p {
+    font-family: "Manrope", "Times New Roman", Times, serif;
+    color: var(--text);
+  }
+
+  /* === HERO === */
+  .hero-jumbotron {
+    background: linear-gradient(145deg, rgba(0, 224, 255, 0.12), rgba(2, 9, 19, 0.85));
+    border-radius: 1.6rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(8px);
+    padding: 3rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-jumbotron::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: conic-gradient(from 120deg, rgba(0, 224, 255, 0.18), rgba(255, 95, 109, 0.12), transparent 45%);
+    filter: blur(60px);
+    z-index: 0;
+    animation: aurora 14s linear infinite;
+  }
+
+  .hero-title {
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+    text-transform: uppercase;
+  }
+
+  .hero-subtitle {
+    max-width: 820px;
+    margin: 0 auto;
+    font-size: 1.08rem;
+    color: var(--muted);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* === INFO GRID === */
+  .info-section {
+    margin: 3.5rem 0;
+  }
+
+  .info-card {
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
+    padding: 1.7rem 1.35rem 2.2rem;
+    color: var(--text);
+    text-align: center;
+    height: 100%;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease,
+                background 0.25s ease, border-color 0.25s ease, translate 0.25s ease;
+  }
+
+  .info-card:hover {
+    transform: translateY(-10px) scale(1.01);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
+    background: var(--card-strong);
+    border-color: rgba(0, 224, 255, 0.35);
+  }
+
+  .info-card img {
+    border: 3px solid rgba(0, 224, 255, 0.9);
+    margin-bottom: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 224, 255, 0.25);
+  }
+
+  .info-card h2 {
+    font-size: 1.45rem;
+    margin-bottom: 0.85rem;
+    color: #ffffff;
+  }
+
+  .info-card p {
+    font-size: 0.98rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* === FEATURETTE === */
+  .featurette-section {
+    margin-top: 3.5rem;
+    margin-bottom: 2.5rem;
+    padding: 2.6rem 2.1rem;
+    background: linear-gradient(160deg, rgba(2, 9, 19, 0.9), rgba(5, 16, 32, 0.82));
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .featurette-section::before {
+    content: "";
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    right: -120px;
+    top: -80px;
+    background: radial-gradient(circle, rgba(0, 224, 255, 0.16), transparent 60%);
+    filter: blur(18px);
+  }
+
+  .featurette-section h2 {
+    font-size: 1.65rem;
+    margin-bottom: 1.2rem;
+    border-left: 4px solid var(--accent);
+    padding-left: 0.75rem;
+    letter-spacing: 0.5px;
+  }
+
+  .featurette-section p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  /* === BADGES === */
+  .pill-badge {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.82rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 224, 255, 0.8);
+    color: var(--accent);
+    margin: 0.15rem;
+    background: rgba(0, 0, 0, 0.6);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  /* === AI FEATURES & FORMATTING === */
+  .ai-section {
+    background: linear-gradient(135deg, rgba(32, 2, 59, 0.9), rgba(13, 17, 33, 0.9));
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+  }
+  
+  .diet-section {
+    background: linear-gradient(135deg, rgba(0, 40, 20, 0.9), rgba(5, 20, 10, 0.9));
+    border: 1px solid rgba(0, 200, 83, 0.3);
+    box-shadow: 0 0 30px rgba(0, 200, 83, 0.15);
+  }
+
+  .ai-input-group textarea, .ai-input-group input {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    border-radius: 10px;
+    resize: none;
+    transition: all 0.3s ease;
+  }
+
+  .ai-input-group textarea:focus, .ai-input-group input:focus {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: #a855f7;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+    outline: none;
+  }
+  
+  .diet-input:focus {
+    border-color: #00c853 !important;
+    box-shadow: 0 0 15px rgba(0, 200, 83, 0.2) !important;
+  }
+
+  /* Styles for AI Generated Content */
+  .ai-output-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .ai-output-content strong {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  
+  .diet-section .ai-output-content strong {
+    color: #00e676; /* Green accent for diet */
+  }
+
+  .ai-output-content ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 10px;
+  }
+
+  .ai-output-content li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 8px;
+  }
+
+  .ai-output-content li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: bold;
+  }
+  
+  .diet-section .ai-output-content li::before {
+     color: #00e676;
+  }
+  
+  .ai-output-content h3, .ai-output-content h4 {
+    color: var(--accent-2);
+    margin-top: 15px;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Enhanced AI Button */
+  .btn-ai {
+    background: linear-gradient(135deg, #9333ea, #c026d3, #e879f9);
+    color: white;
+    border: 2px solid rgba(168, 85, 247, 0.4);
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    box-shadow: 0 6px 25px rgba(168, 85, 247, 0.45), 
+                0 0 40px rgba(168, 85, 247, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .btn-ai::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, #e879f9, #d946ef, #a855f7);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.4s ease;
+  }
+  
+  .btn-ai::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-ai:hover::before {
+    opacity: 1;
+  }
+  
+  .btn-ai:hover::after {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+
+  .btn-ai:hover {
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(168, 85, 247, 0.8),
+                0 0 60px rgba(168, 85, 247, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    color: white;
+    border-color: rgba(232, 121, 249, 0.8);
+  }
+  
+  .btn-ai:active {
+    transform: translateY(-2px) scale(1.01);
+  }
+  
+  .btn-ai i {
+    display: inline-block;
+    animation: sparkle 2s ease-in-out infinite;
+  }
+  
+  @keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+  }
+  
+  /* Enhanced Diet Button */
+  .btn-diet {
+    background: linear-gradient(135deg, #10b981, #059669, #34d399);
+    color: white;
+    border: 2px solid rgba(16, 185, 129, 0.4);
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.45),
+                0 0 40px rgba(16, 185, 129, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .btn-diet::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, #34d399, #10b981, #059669);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.4s ease;
+  }
+  
+  .btn-diet::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-diet:hover::before {
+    opacity: 1;
+  }
+  
+  .btn-diet:hover::after {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+  
+  .btn-diet:hover {
+     transform: translateY(-5px) scale(1.03);
+     box-shadow: 0 12px 35px rgba(16, 185, 129, 0.8),
+                 0 0 60px rgba(16, 185, 129, 0.4),
+                 inset 0 1px 0 rgba(255, 255, 255, 0.3);
+     color: white;
+     border-color: rgba(52, 211, 153, 0.8);
+  }
+  
+  .btn-diet:active {
+    transform: translateY(-2px) scale(1.01);
+  }
+  
+  .btn-diet i {
+    display: inline-block;
+    animation: leafFloat 3s ease-in-out infinite;
+  }
+  
+  @keyframes leafFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(5deg); }
+  }
+
+  /* Chat Widget */
+  .chat-widget-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00e0ff, #2979ff);
+    box-shadow: 0 5px 20px rgba(0, 224, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .chat-widget-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .chat-window {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 350px;
+    height: 450px;
+    background: rgba(13, 17, 33, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 224, 255, 0.3);
+    border-radius: 20px;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    transform-origin: bottom right;
+    animation: popIn 0.3s ease forwards;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .chat-header {
+    background: linear-gradient(90deg, rgba(0, 224, 255, 0.1), rgba(41, 121, 255, 0.1));
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+  }
+
+  .chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+  }
+
+  .chat-footer {
+    padding: 15px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .chat-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    max-width: 80%;
+    line-height: 1.4;
+  }
+
+  .bot-msg {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    border-bottom-left-radius: 2px;
+    margin-right: auto;
+  }
+
+  .user-msg {
+    background: rgba(0, 224, 255, 0.2);
+    color: #fff;
+    border-bottom-right-radius: 2px;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .typing-indicator span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: var(--muted);
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out both;
+    margin: 0 2px;
+  }
+
+  .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+  .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+  @keyframes typing {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+  }
+
+  /* === ANIMATIONS === */
+  @keyframes aurora {
+    0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+    50% { transform: rotate(180deg) scale(1.05); opacity: 1; }
+    100% { transform: rotate(360deg) scale(1); opacity: 0.8; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .hero-jumbotron { padding: 2.4rem 1.6rem; }
+    .hero-title { font-size: 1.65rem; }
+    .hero-subtitle { font-size: 1rem; }
+    .info-card { padding: 1.5rem 1.25rem; }
+    .featurette-section { padding: 2.2rem 1.4rem; }
+  }
+</style>
+
+<main role="main" class="container py-5">
+
+  <!-- HERO SECTION -->
+  <section class="jumbotron text-white text-center hero-jumbotron">
+    <h1 class="jumbotron-heading hero-title">
+      DETECTION AND CLASSIFICATION OF ARRHYTHMIA
+    </h1>
+    <p class="hero-subtitle mt-3">
+      A machine learning–based system to automatically detect and classify cardiac arrhythmias
+      from ECG signals, enabling faster diagnosis and continuous monitoring for patients at risk.
+    </p>
+    <div class="mt-4">
+      <a href="{{ url_for('fetalPage') }}" class="btn btn-outline-info mr-2">Manual Input</a>
+      <a href="{{ url_for('upload_csv') }}" class="btn btn-outline-warning mr-2">Upload CSV</a>
+      <a href="{{ url_for('upload_ecg_image') }}" class="btn btn-accent" style="background: linear-gradient(90deg,#00e0ff,#00c853); color: #000; border: none;">Analyze ECG Image</a>
+    </div>
+    
+  </section>
+
+  <!-- INFO CARDS ROW 1 -->
+  <section class="info-section">
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <div class="info-card">
+          <img class="rounded-circle"
+               src="https://media4.giphy.com/media/FKlIzeHEOZMLA2kijp/giphy.gif?cid=6c09b952zsaq439arktjtix2olh298z9j1n56s5otv1wxgde&ep=v1_internal_gif_by_id&rid=giphy.gif&ct=s"
+               alt="Arrhythmia"
+               width="160" height="160">
+          <h2>About Arrhythmia</h2>
+          <p>
+            Arrhythmia is an irregular heartbeat that disrupts normal heart function, often
+            causing palpitations, dizziness, or fatigue. Diagnosis is typically done through
+            electrocardiogram (ECG) signals, and treatment ranges from lifestyle changes and
+            medication to implantable devices or surgery.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-4">
+        <div class="info-card">
+          <img class="rounded-circle"
+               src="https://www.hdatasystems.com/assets/uploads/banner/1639014633.jpg"
+               alt="Algorithm"
+               width="160" height="160">
+          <h2>Algorithm</h2>
+          <p>
+            We use a Weighted KNN (k-Nearest Neighbors) model for classification. Each neighbour
+            contributes to the prediction based on its distance from the query point, improving
+            robustness and handling class overlap more effectively in ECG feature space.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO CARDS ROW 2 -->
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <div class="info-card">
+          <img class="rounded-circle"
+               src="https://media.tenor.com/images/1897e227e1a9dc21947727ec0521ac08/tenor.gif"
+               alt="Efficiency"
+               width="160" height="160">
+          <h2>Efficiency</h2>
+          <p>
+            Using carefully selected ECG features and Weighted KNN, our model reaches an accuracy
+            of <b>98%</b> on the test set. This shows that machine learning can effectively
+            support cardiologists in early and reliable arrhythmia detection.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-4">
+        <div class="info-card">
+          <img class="rounded-circle"
+               src="https://i.makeagif.com/media/6-07-2015/oFNRPn.gif"
+               alt="ECG Data"
+               width="160" height="160">
+          <h2>About the ECG Data</h2>
+          <p>
+            We use the Cardiac Arrhythmia dataset from Kaggle, containing around 1356 records
+            across multiple arrhythmia classes. The pipeline includes preprocessing, feature
+            extraction and scaling, followed by training and evaluation of the classifier.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS / FEATURETTE -->
+  <section class="featurette-section">
+    <h2>How the System Works</h2>
+    <p class="lead">
+      The project entails creating an web-based system for real-time cardiac arrhythmia detection using ML algorithms. It involves developing compact to monitor cardiac parameters like heart rate and ECG intervals. Algorithms and machine learning models are employed for real-time analysis, accurately identifying arrhythmias. A web-based dashboard provides healthcare professionals and patients with visualizations of vital signs, alerts for detected arrhythmias, and historical data. The system is designed to be scalable, reliable, and user-friendly, with integration capabilities for existing healthcare systems. Testing, validation, documentation, and training are crucial steps for successful deployment in clinical settings.
+    </p>
+  </section>
+
+  <!-- GEMINI AI SECTION 1: REPORT SIMPLIFIER -->
+  <section class="featurette-section ai-section mt-5">
+    <div class="row align-items-center">
+      <div class="col-md-7">
+        <h2 style="border-left-color: #a855f7;">AI Medical Report Simplifier</h2>
+        <p>
+          Confused by complex medical terms in your ECG report? Paste your notes below, and our Gemini-powered AI will break it down into simple, easy-to-understand language.
+        </p>
+        <div class="ai-input-group mt-3">
+          <textarea id="ai-input-text" class="form-control mb-3" rows="4" placeholder="Paste your medical report or symptoms here... (e.g., 'Sinus Tachycardia with occasional PVCs')"></textarea>
+          <button class="btn btn-ai px-4 py-2" onclick="simplifyReport()">
+            <i class="fas fa-magic mr-2"></i> Simplify with Gemini ✨
+          </button>
+        </div>
+        <div id="ai-result" class="mt-3 p-3 rounded" style="background: rgba(0,0,0,0.3); display: none; border: 1px solid rgba(168, 85, 247, 0.3);">
+          <h5 class="text-white mb-2" style="font-size: 1rem;"><i class="fas fa-robot mr-2" style="color: #a855f7;"></i>AI Analysis:</h5>
+          <div id="ai-result-text" class="mb-0 text-white-50 ai-output-content"></div>
+        </div>
+      </div>
+      <div class="col-md-5 text-center d-none d-md-block">
+        <!-- REPLACED MAIN AI BRAIN IMAGE -->
+        <img src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png" alt="AI Brain" style="width: 250px; opacity: 0.9; filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));">
+      </div>
+    </div>
+  </section>
+  
+  <!-- GEMINI AI SECTION 2: DIET PLANNER -->
+  <section class="featurette-section ai-section diet-section mt-5">
+    <div class="row align-items-center">
+      <div class="col-md-5 text-center d-none d-md-block">
+         <img src="https://cdn-icons-png.flaticon.com/512/2921/2921822.png" alt="Healthy Food" style="width: 70%; opacity: 0.9; filter: drop-shadow(0 0 20px rgba(0, 200, 83, 0.4));">
+      </div>
+      <div class="col-md-7">
+        <h2 style="border-left-color: #00c853;">Heart-Healthy Diet Planner</h2>
+        <p>
+          Nutrition plays a vital role in managing arrhythmia. Enter your preferences or restrictions, and let AI generate a heart-smart meal plan for you.
+        </p>
+        <div class="ai-input-group mt-3">
+          <input type="text" id="diet-input" class="form-control mb-3 diet-input" placeholder="E.g., Low sodium, vegetarian, loves avocados...">
+          <button class="btn btn-diet px-4 py-2" onclick="generateDiet()">
+            <i class="fas fa-leaf mr-2"></i> Generate Plan with Gemini ✨
+          </button>
+        </div>
+        <div id="diet-result" class="mt-3 p-3 rounded" style="background: rgba(0,0,0,0.3); display: none; border: 1px solid rgba(0, 200, 83, 0.3);">
+          <h5 class="text-white mb-2" style="font-size: 1rem;"><i class="fas fa-utensils mr-2" style="color: #00c853;"></i>Suggested Plan:</h5>
+          <div id="diet-result-text" class="mb-0 text-white-50 ai-output-content"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- CHAT WIDGET -->
+<div class="chat-widget-btn" onclick="toggleChat()">
+  <!-- REPLACED CHAT BOT ICON -->
+  <img src="https://cdn-icons-png.flaticon.com/512/6134/6134346.png" alt="AI Chat" style="width: 40px; height: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+</div>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <div style="width: 35px; height: 35px; background: rgba(255,255,255,0.1); border-radius: 50%; overflow: hidden; margin-right: 10px; display: flex; align-items: center; justify-content: center;">
+      <!-- REPLACED CHAT HEADER ICON -->
+      <img src="https://cdn-icons-png.flaticon.com/512/6134/6134346.png" alt="Bot" style="width: 100%; height: 100%; object-fit: cover;">
+    </div>
+    <div>
+      <h6 class="mb-0 text-white">Dr. Gemini AI</h6>
+      <small class="text-muted" style="font-size: 0.75rem;">Online • Heart Specialist</small>
+    </div>
+    <button onclick="toggleChat()" class="btn btn-sm text-white ml-auto" style="background: transparent; border: none; cursor: pointer;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+  
+  <div class="chat-body" id="chatBody">
+    <div class="chat-bubble bot-msg">
+      Hello! I'm your AI Heart Health assistant. How can I help you today? ✨
+    </div>
+  </div>
+  
+  <div class="chat-footer">
+    <div class="input-group">
+      <input type="text" id="chatInput" class="form-control bg-dark text-white border-secondary" placeholder="Ask a question..." onkeydown="handleEnter(event)">
+      <div class="input-group-append">
+        <button class="btn btn-info" type="button" onclick="sendMessage()" style="display: flex; align-items: center; justify-content: center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS FOR AI INTERACTION -->
+<script>
+  const apiKey = "-oAIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm"; // Set your API Key here or inject via environment
+
+  // Helper function to call Gemini API
+  async function callGemini(prompt, retries = 3) {
+    if (!apiKey) {
+      return "Error: API Key is missing. Please configure the application.";
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const payload = {
+      contents: [{ parts: [{ text: prompt }] }]
+    };
+
+    let attempt = 0;
+    while (attempt <= retries) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+           if (response.status === 429) {
+             throw new Error("Rate limit exceeded");
+           }
+           throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response.";
+        
+      } catch (error) {
+        attempt++;
+        if (attempt > retries) {
+           console.error("Gemini API Error:", error);
+           return "I'm having trouble connecting to the AI right now. Please try again later.";
+        }
+        // Exponential backoff: 1s, 2s, 4s...
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+      }
+    }
+  }
+
+  // --- FEATURE 1: REPORT SIMPLIFIER ---
+  async function simplifyReport() {
+    const input = document.getElementById('ai-input-text').value;
+    const resultBox = document.getElementById('ai-result');
+    const resultText = document.getElementById('ai-result-text');
+    
+    if (!input.trim()) {
+      alert("Please enter some text to analyze.");
+      return;
+    }
+
+    // Show loading state
+    resultBox.style.display = 'block';
+    resultText.innerHTML = '<span class="typing-indicator"><span></span><span></span><span></span></span> Analyzing medical data...';
+
+    // Updated Prompt for structured HTML output
+    const prompt = `Act as a helpful medical assistant. Simplify the following medical text (likely related to ECG or heart health) into plain, easy-to-understand language for a patient. 
+    IMPORTANT: Output the result using strictly HTML tags for formatting. 
+    - Use <strong> for key terms.
+    - Use <br> for line breaks. 
+    - Use <ul> and <li> for lists of symptoms or key points.
+    - Do NOT use markdown.
+    Text to simplify: "${input}"`;
+    
+    const response = await callGemini(prompt);
+    
+    // Insert HTML directly
+    resultText.innerHTML = response;
+  }
+  
+  // --- FEATURE 2: DIET PLANNER ---
+  async function generateDiet() {
+    const input = document.getElementById('diet-input').value;
+    const resultBox = document.getElementById('diet-result');
+    const resultText = document.getElementById('diet-result-text');
+    
+    if (!input.trim()) {
+      alert("Please enter your diet preferences.");
+      return;
+    }
+
+    resultBox.style.display = 'block';
+    resultText.innerHTML = '<span class="typing-indicator"><span></span><span></span><span></span></span> Generating meal plan...';
+    
+    // Updated Prompt for structured HTML output
+    const prompt = `Create a heart-healthy meal plan (one day sample) for a person with the following preferences/restrictions: "${input}". 
+    IMPORTANT: Output the result using strictly HTML tags for formatting.
+    - Use <h3> tags for meal headers (Breakfast, Lunch, Dinner, Snack).
+    - Use <ul> and <li> tags for the specific food items.
+    - Use <strong> tags for key nutrients or calories.
+    - Keep it concise and do NOT use markdown.`;
+    
+    const response = await callGemini(prompt);
+    resultText.innerHTML = response;
+  }
+
+  // --- FEATURE 3: CHAT WIDGET ---
+  function toggleChat() {
+    const win = document.getElementById('chatWindow');
+    if (win.style.display === 'none' || win.style.display === '') {
+      win.style.display = 'flex';
+    } else {
+      win.style.display = 'none';
+    }
+  }
+
+  function handleEnter(e) {
+    if (e.key === 'Enter') sendMessage();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const chatBody = document.getElementById('chatBody');
+    const msg = input.value.trim();
+    
+    if (!msg) return;
+
+    // Add User Message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'chat-bubble user-msg';
+    userDiv.innerText = msg;
+    chatBody.appendChild(userDiv);
+    
+    input.value = '';
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Simulate Bot Typing
+    const botDiv = document.createElement('div');
+    botDiv.className = 'chat-bubble bot-msg';
+    botDiv.innerHTML = '<span class="typing-indicator"><span></span><span></span><span></span></span>';
+    chatBody.appendChild(botDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Call Gemini with improved prompt
+    const prompt = `Act as Dr. Gemini AI, a specialized medical assistant for an Arrhythmia Detection application. Provide accurate, concise, and professional answers specifically focused on heart health, ECG analysis, and cardiac conditions. Ensure all medical information is correct. Always include a brief disclaimer that you are an AI and this is not a medical diagnosis. If the user asks about non-medical topics, politely steer the conversation back to heart health. Question: "${msg}"`;
+    
+    const response = await callGemini(prompt);
+    
+    // Update Bot Message
+    botDiv.innerText = response;
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+</script>
+
+{% endblock %}

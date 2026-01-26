@@ -1,0 +1,32 @@
+flowchart LR
+  A[Data Sources]
+  A -->|CSV uploads| B[CSV Parser & Feature Extraction]
+  A -->|Image uploads| C[Image Preprocessing & Feature Extraction]
+  A -->|Manual input| D[Manual Entry → CSV]
+  B --> E[Feature Normalization & Engineering]
+  C --> E
+  D --> E
+  E --> F[ML Model (NOTEBOOK_FILES/model.pkl)]
+  F --> G[Prediction: class_id, confidence]
+  G --> H[Map class_id → CLASS_LABELS & risk level]
+  H --> I[Create Report Record in hospital.db]
+  I --> J[Generate PDF (ReportLab) & CSV outputs]
+  J --> K[Save files to static/uploads]
+  K --> L[Email PDF to patient/doctor (smtplib)]
+  I --> M[Doctor Dashboard (/doctor/reports)]
+  M --> N[Preview modal, Download PDF/CSV, Filters, Search]
+  subgraph Ops
+    O1[DB: hospital.db (patient, upload, report)]
+    O2[Auth: signup/login/verify]
+    O3[Helpers: generate_ecg_plot(), extract_ecg_features_from_image()]
+  end
+  I --> O1
+  M --> O2
+  E --> O3
+  C --> O3
+
+  classDef data fill:#f0f8ff,stroke:#cfeaff;
+  classDef proc fill:#ffffff,stroke:#e6eef6;
+  class A,B,C,D data;
+  class E,F,G,H,I,J,K,M proc;
+  class O1,O2,O3 data;

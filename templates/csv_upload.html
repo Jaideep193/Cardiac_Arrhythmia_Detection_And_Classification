@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrhythmia via CSV</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg,#f0f9ff,#e8fff5); min-height: 100vh; }
+    .navbar { background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); }
+    .card { background: rgba(255,255,255,0.9); border: none; border-radius: 16px; box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
+    .btn-primary { background: linear-gradient(90deg,#00c853,#00bfa5); border: none; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-download { background: linear-gradient(90deg,#2196F3,#1976D2); border: none; color: white; }
+    .btn-download:hover { filter: brightness(1.05); color: white; }
+    .ecg-img { max-height: 280px; object-fit: contain; }
+    .hint { color:#0a7; font-size:0.95rem; }
+    table td { vertical-align: middle; }
+    .results-section { background: #f8f9fa; border-radius: 12px; padding: 20px; margin-top: 20px; }
+    
+    .download-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      padding: 30px;
+      margin-top: 30px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      color: white;
+    }
+    .download-card h4 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+    .download-card p { font-size: 0.95rem; opacity: 0.95; margin-bottom: 20px; }
+    
+    .download-btn-large {
+      background: linear-gradient(90deg, #FFD700, #FFC700);
+      color: #333;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 10px;
+      display: inline-block;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+    }
+    .download-btn-large:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+      color: #333;
+      text-decoration: none;
+    }
+
+    /* AI Section Styles */
+    .ai-box {
+      background: #ffffff;
+      border: 1px solid #e3e6f0;
+      border-left: 5px solid #6f42c1;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 30px;
+    }
+    .btn-ai {
+      background: #6f42c1;
+      color: white;
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-size: 0.9rem;
+      border: none;
+      transition: 0.3s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .btn-ai:hover {
+      background: #5a32a3;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(111, 66, 193, 0.3);
+    }
+    .ai-content {
+      margin-top: 15px;
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.6;
+      display: none;
+      background: #f8f9fc;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .ai-spinner { display: none; margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-sm fixed-top navbar-light">
+    <a class="navbar-brand" href="{{ url_for('home') }}">Arrhythmia Detection</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('fetalPage') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container" style="padding-top: 90px;">
+    <div class="card p-4">
+      <h2 class="mb-3">Upload CSV for Arrhythmia Classification</h2>
+      <p class="hint">Expected headers (case-insensitive):
+        age, gender, height, weight, qrs, qt, t, pr, p, heart_rate
+      </p>
+
+      <form method="post" action="{{ url_for('upload_csv') }}" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group col-md-4">
+            <label>Patient Name (optional)</label>
+            <input type="text" class="form-control" name="name" value="{{ name or '' }}">
+          </div>
+          <div class="form-group col-md-8">
+            <label>CSV File</label>
+            <input type="file" class="form-control" name="csv_file" accept=".csv" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i> Upload & Predict</button>
+      </form>
+
+      {% if status %}
+        <div class="results-section">
+          <h3 class="mb-3"><i class="fa-solid fa-check-circle" style="color:#00c853;"></i> Prediction Results</h3>
+          <h4>Status: <span class="text-success font-weight-bold" id="res-status">{{ status }}</span></h4>
+          
+          {% if name %}
+          <div class="mt-2">
+            <strong>Patient:</strong> {{ name }}<br>
+            <strong>Deviation from average QRS:</strong> {{ cent }}%
+          </div>
+          {% endif %}
+
+          {% if risk %}
+          <div class="mt-3">
+            <h5><i class="fa-solid fa-shield-heart" style="color:#ff6b6b;"></i> Risk Assessment</h5>
+            <ul id="risk-list">
+              {% for r in risk %}
+                <li>{{ r }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if values %}
+          <div class="mt-4">
+            <h5><i class="fa-solid fa-file-medical" style="color:#0088aa;"></i> Extracted Values</h5>
+            <!-- Data Attributes for AI Access -->
+            <div id="medical-data-store" 
+                 data-age="{{ values.age }}"
+                 data-gender="{{ 'Male' if values.gender == 0 else 'Female' }}"
+                 data-qrs="{{ values.qrs }}"
+                 data-qt="{{ values.qt }}"
+                 data-hr="{{ values.heart_rate }}"
+                 style="display:none;"></div>
+
+            <table class="table table-sm table-bordered">
+              <tbody>
+                <tr><td><strong>Age</strong></td><td>{{ values.age }}</td></tr>
+                <tr><td><strong>Gender</strong></td><td>{{ "Male" if values.gender == 0 else "Female" }}</td></tr>
+                <tr><td><strong>Height</strong></td><td>{{ values.height }}</td></tr>
+                <tr><td><strong>Weight</strong></td><td>{{ values.weight }}</td></tr>
+                <tr><td><strong>QRS</strong></td><td>{{ values.qrs }}</td></tr>
+                <tr><td><strong>QT</strong></td><td>{{ values.qt }}</td></tr>
+                <tr><td><strong>T</strong></td><td>{{ values.t }}</td></tr>
+                <tr><td><strong>PR</strong></td><td>{{ values.pr }}</td></tr>
+                <tr><td><strong>P</strong></td><td>{{ values.p }}</td></tr>
+                <tr><td><strong>Heart Rate</strong></td><td>{{ values.heart_rate }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+          
+          <!-- Gemini AI Section -->
+          <div class="ai-box">
+            <h4 style="color:#6f42c1; font-weight:600;"><i class="fa-solid fa-robot"></i> AI Health Assistant</h4>
+            <p class="text-muted small">Powered by Gemini. Click below to analyze your specific CSV data.</p>
+            
+            <button class="btn btn-ai" onclick="explainMetrics()">
+              <i class="fa-solid fa-magnifying-glass-chart"></i> Explain My Metrics ✨
+            </button>
+            <button class="btn btn-ai" onclick="getHealthTips()">
+              <i class="fa-solid fa-user-doctor"></i> Personalized Advice ✨
+            </button>
+            
+            <span id="ai-spinner" class="ai-spinner"><i class="fa-solid fa-circle-notch fa-spin text-primary"></i> Analyzing...</span>
+            
+            <div id="ai-result-container" class="ai-content"></div>
+          </div>
+
+          {% if ecg_path %}
+          <div class="mt-5">
+            <h5><i class="fa-solid fa-heart-pulse" style="color:#00c853;"></i> ECG Signals</h5>
+            <div class="row mt-3">
+              <div class="col-md-6 text-center">
+                <img class="img-fluid ecg-img" src="{{ url_for('static', filename='ecg_signal.png') }}" alt="Detailed ECG">
+                <div class="small text-muted mt-2">Detailed ECG Signal</div>
+              </div>
+              <div class="col-md-6 text-center">
+                <img class="img-fluid ecg-img" src="{{ url_for('static', filename='ecg_signal_simple.png') }}" alt="Simple ECG">
+                <div class="small text-muted mt-2">Simplified ECG Signal</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Download PDF Report Button -->
+          <div class="download-card">
+            <h4><i class="fa-solid fa-file-pdf" style="color:#ff6b6b;"></i> Your Cardiac Report is Ready!</h4>
+            <p>Download the detailed PDF report with all predictions, ECG signals, and medical insights.</p>
+            <a class="download-btn-large" href="{{ url_for('static', filename='report_' + (name or 'patient') + '.pdf') }}" download>
+              <i class="fa-solid fa-download"></i> Download PDF Report
+            </a>
+            <p style="margin-top: 15px; font-size: 0.85rem; opacity: 0.9;">
+              <i class="fa-solid fa-shield-check"></i> Secure • <i class="fa-solid fa-clock"></i> Instant Download
+            </p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+  
+  <script>
+    // API CONFIGURATION
+    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Insert Key Here or Configure Backend Proxy
+    const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+
+    async function callGemini(prompt) {
+        const spinner = document.getElementById('ai-spinner');
+        const resultContainer = document.getElementById('ai-result-container');
+        
+        spinner.style.display = 'inline-block';
+        resultContainer.style.display = 'none';
+        
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${apiKey}`;
+        const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+            
+            resultContainer.innerHTML = marked.parse(text);
+            resultContainer.style.display = 'block';
+        } catch (error) {
+            resultContainer.innerHTML = '<span class="text-danger">Error: Could not connect to AI service.</span>';
+            resultContainer.style.display = 'block';
+            console.error(error);
+        } finally {
+            spinner.style.display = 'none';
+        }
+    }
+
+    function explainMetrics() {
+        const data = document.getElementById('medical-data-store').dataset;
+        const status = document.getElementById('res-status')?.innerText;
+        
+        const prompt = `
+            You are a helpful cardiologist assistant.
+            The patient has uploaded a CSV with the following data:
+            - Age: ${data.age}, Gender: ${data.gender}
+            - Heart Rate: ${data.hr} bpm
+            - QRS Interval: ${data.qrs} ms
+            - QT Interval: ${data.qt} ms
+            - Detected Status: ${status}
+
+            Please explain these specific metrics to the patient in simple terms. 
+            Focus on what QRS and QT mean in relation to their specific values (are they high, low, or normal?).
+            Keep it brief (under 100 words).
+        `;
+        callGemini(prompt);
+    }
+
+    function getHealthTips() {
+        const status = document.getElementById('res-status')?.innerText;
+        const risks = document.getElementById('risk-list')?.innerText || "General cardiac care";
+        
+        const prompt = `
+            The patient has been classified with: ${status}.
+            Identified risks include: ${risks}.
+
+            Provide 3 bullet-point lifestyle recommendations specifically for someone with this profile.
+            Add a reassuring closing sentence.
+        `;
+        callGemini(prompt);
+    }
+  </script>
+  
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

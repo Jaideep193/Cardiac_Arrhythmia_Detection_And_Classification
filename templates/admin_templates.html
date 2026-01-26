@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Report Templates</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+    .page-header { background: rgba(255,255,255,0.95); color: #333; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .card { border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-0"><i class="fa fa-file-invoice me-2"></i>Report Templates</h3>
+        <small>Customize institution-specific report formats</small>
+      </div>
+      <div>
+        <a href="{{ url_for('doctor_reports') }}" class="btn btn-light"><i class="fa fa-arrow-left me-1"></i>Dashboard</a>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-5">
+        <div class="card p-4">
+          <h5 class="mb-3">Create Template</h5>
+          <div class="mb-3">
+            <label class="form-label">Template Name</label>
+            <input id="template_name" class="form-control" placeholder="e.g., Detailed ECG Report">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea id="template_desc" class="form-control" rows="2" placeholder="Brief description..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">HTML Template</label>
+            <textarea id="template_html" class="form-control" rows="8" placeholder="<h2>{{ patient_name }}</h2><p>Diagnosis: {{ result }}</p>..."></textarea>
+            <small class="text-muted">Available variables: patient_name, result, qrs, qt, pr, heart_rate, confidence, risk</small>
+          </div>
+          <button class="btn btn-primary w-100" onclick="createTemplate()"><i class="fa fa-save me-1"></i>Save Template</button>
+        </div>
+      </div>
+
+      <div class="col-md-7">
+        <div class="card p-4">
+          <h5 class="mb-3">Saved Templates</h5>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Created</th>
+                  <th>Default</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in templates %}
+                <tr>
+                  <td><strong>{{ t.name }}</strong></td>
+                  <td>{{ t.description }}</td>
+                  <td><small class="text-muted">{{ t.created_at }}</small></td>
+                  <td>{% if t.is_default %}<span class="badge bg-success">Default</span>{% endif %}</td>
+                  <td>
+                    <button class="btn btn-sm btn-info" onclick="viewTemplate({{ t.id }})">
+                      <i class="fa fa-eye"></i> View
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template View Modal -->
+  <div class="modal fade" id="templateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Template Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label"><strong>Template Name</strong></label>
+            <p id="view_name" class="form-control-plaintext"></p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><strong>Description</strong></label>
+            <p id="view_desc" class="form-control-plaintext"></p>
+          </div>
+          
+          <!-- Tabs for Code and Preview -->
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="code-tab" data-bs-toggle="tab" data-bs-target="#code-content" type="button" role="tab">
+                <i class="fa fa-code me-1"></i>HTML Code
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview-content" type="button" role="tab">
+                <i class="fa fa-eye me-1"></i>Preview
+              </button>
+            </li>
+          </ul>
+          
+          <!-- Tab Content -->
+          <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="code-content" role="tabpanel">
+              <pre id="view_html" style="background: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; font-size: 0.85rem;"></pre>
+            </div>
+            <div class="tab-pane fade" id="preview-content" role="tabpanel">
+              <div id="view_preview" style="background: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% raw %}
+  <script>
+    async function createTemplate() {
+      const name = document.getElementById('template_name').value.trim();
+      const description = document.getElementById('template_desc').value.trim();
+      const template_html = document.getElementById('template_html').value.trim();
+      if (!name || !template_html) {
+        alert('Name and HTML are required');
+        return;
+      }
+      const payload = new URLSearchParams({ name, description, template_html });
+      const res = await fetch('/api/templates', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
+      const data = await res.json();
+      if (data.ok) {
+        alert('Template created');
+        location.reload();
+      } else {
+        alert('Error: ' + (data.error || 'Unknown'));
+      }
+    }
+
+    async function viewTemplate(templateId) {
+      try {
+        const res = await fetch(`/api/templates/${templateId}`);
+        const data = await res.json();
+        if (data.ok) {
+          const template = data.template;
+          document.getElementById('view_name').textContent = template.name;
+          document.getElementById('view_desc').textContent = template.description || 'No description';
+          document.getElementById('view_html').textContent = template.template_html;
+          
+          // Generate sample preview with placeholder values
+          let previewHtml = template.template_html;
+          const placeholders = {
+            'patient_name': 'Sample Patient',
+            'result': 'Normal Sinus Rhythm',
+            'qrs': '80',
+            'qt': '400',
+            'pr': '160',
+            'heart_rate': '72',
+            'confidence': '95',
+            'risk': 'Low',
+            'date': new Date().toLocaleString()
+          };
+          
+          // Replace all template variables with sample values
+          for (const [key, value] of Object.entries(placeholders)) {
+            const regex = new RegExp('{{\\s*' + key + '\\s*}}', 'g');
+            previewHtml = previewHtml.replace(regex, value);
+          }
+          
+          document.getElementById('view_preview').innerHTML = previewHtml;
+          
+          const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+          modal.show();
+        } else {
+          alert('Error loading template: ' + (data.error || 'Unknown'));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+  </script>
+  {% endraw %}
+</body>
+</html>

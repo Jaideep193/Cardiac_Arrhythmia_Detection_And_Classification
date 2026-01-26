@@ -1,0 +1,18 @@
+Parameter,Value
+Patient Name,Shivaraj
+Status,Sinus tachycardia
+Risk Level,LOW
+Age,0
+Gender,Male
+Height,0
+Weight,0
+QRS (ms),80.0
+QT (ms),405.0
+T (ms),160.0
+PR (ms),155.0
+P (ms),90.0
+Heart Rate (bpm),10.7
+QRS Deviation %,78.21
+Confidence Score,0.46
+Paper Speed (mm/s),25.0
+Amplitude Gain (mm/mV),10.0

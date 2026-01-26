@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced ECG Visualization - Cardiac Arrhythmia Analysis</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Plotly.js for interactive charts -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container-fluid {
+            padding: 2rem;
+        }
+        
+        .viz-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s;
+        }
+        
+        .viz-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .viz-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .control-panel {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .plot-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .spectrogram-container {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .comparison-container {
+            width: 100%;
+            height: 450px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s;
+        }
+        
+        .btn-custom:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .metric-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .nav-back {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .nav-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateX(-5px);
+        }
+        
+        .tab-content {
+            padding-top: 1.5rem;
+        }
+        
+        .nav-tabs .nav-link {
+            color: #667eea;
+            border: none;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="viz-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-heartbeat"></i> Enhanced ECG Visualization</h1>
+                    <p class="mb-0">Interactive waveform analysis with advanced signal processing</p>
+                </div>
+                <a href="{{ url_for('doctor_reports') }}" class="nav-back">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="viz-card">
+            <div class="control-panel">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Select Report for Analysis</strong></label>
+                        <select id="reportSelect" class="form-select">
+                            <option value="">Choose a report...</option>
+                            {% for report in reports %}
+                            <option value="{{ report[0] }}">
+                                {{ report[1] }} - {{ report[2] }} ({{ report[3][:10] }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button onclick="loadReport()" class="btn btn-custom w-100">
+                            <i class="fas fa-sync-alt"></i> Load & Analyze
+                        </button>
+                    </div>
+                    <div class="col-md-5">
+                        <div id="metadataDisplay" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs" id="vizTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#realtime-tab">
+                    <i class="fas fa-wave-square"></i> Real-time ECG
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#heatmap-tab">
+                    <i class="fas fa-fire"></i> Arrhythmia Heat Map
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#spectrogram-tab">
+                    <i class="fas fa-chart-area"></i> 3D Spectrogram
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#comparison-tab">
+                    <i class="fas fa-code-compare"></i> Comparative Analysis
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="vizTabContent">
+            <!-- Real-time ECG Tab -->
+            <div class="tab-pane fade show active" id="realtime-tab">
+                <div class="viz-card">
+                    <h4><i class="fas fa-wave-square"></i> Interactive ECG Waveform</h4>
+                    <p class="text-muted">Zoom, pan, and hover to explore the signal</p>
+                    <div id="loadingEcg" class="loading-spinner">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p>Loading ECG data...</p>
+                    </div>
+                    <div id="ecgPlot" class="plot-container"></div>
+                </div>
+            </div>
+
+            <!-- Heat Map Tab -->
+            <div class="tab-pane fade" id="heatmap-tab">
+                <div class="viz-card">
+                    <h4><i class="fas fa-fire"></i> Arrhythmia Heat Map</h4>
+                    <p class="text-muted">Visual representation of abnormality scores across the ECG signal</p>
+                    <div id="loadingHeatmap" class="loading-spinner">
+                        <div class="spinner-border text-danger" role="status"></div>
+                        <p>Computing heat map...</p>
+                    </div>
+                    <div id="heatmapPlot" class="plot-container"></div>
+                </div>
+            </div>
+
+            <!-- Spectrogram Tab -->
+            <div class="tab-pane fade" id="spectrogram-tab">
+                <div class="viz-card">
+                    <h4><i class="fas fa-chart-area"></i> Time-Frequency Spectrogram</h4>
+                    <p class="text-muted">3D representation showing frequency content over time</p>
+                    <div id="loadingSpectrogram" class="loading-spinner">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p>Generating spectrogram...</p>
+                    </div>
+                    <div id="spectrogramPlot" class="spectrogram-container"></div>
+                </div>
+            </div>
+
+            <!-- Comparison Tab -->
+            <div class="tab-pane fade" id="comparison-tab">
+                <div class="viz-card">
+                    <h4><i class="fas fa-code-compare"></i> Side-by-Side Comparison</h4>
+                    <p class="text-muted">Compare two ECG signals to identify differences</p>
+                    
+                    <div class="control-panel mb-3">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <label class="form-label">Report A</label>
+                                <select id="compareReportA" class="form-select">
+                                    <option value="">Select first report...</option>
+                                    {% for report in reports %}
+                                    <option value="{{ report[0] }}">
+                                        {{ report[1] }} - {{ report[2] }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Report B</label>
+                                <select id="compareReportB" class="form-select">
+                                    <option value="">Select second report...</option>
+                                    {% for report in reports %}
+                                    <option value="{{ report[0] }}">
+                                        {{ report[1] }} - {{ report[2] }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button onclick="loadComparison()" class="btn btn-custom w-100">
+                                    <i class="fas fa-balance-scale"></i> Compare
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="loadingComparison" class="loading-spinner">
+                        <div class="spinner-border text-warning" role="status"></div>
+                        <p>Loading comparison data...</p>
+                    </div>
+                    <div id="comparisonPlot" class="comparison-container"></div>
+                    <div id="comparisonMetrics" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentReportData = null;
+
+        // Load single report data
+        async function loadReport() {
+            const reportId = document.getElementById('reportSelect').value;
+            if (!reportId) {
+                alert('Please select a report');
+                return;
+            }
+
+            // Show loading spinners
+            document.getElementById('loadingEcg').style.display = 'block';
+            document.getElementById('loadingHeatmap').style.display = 'block';
+            document.getElementById('loadingSpectrogram').style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/ecg_data/${reportId}`);
+                const data = await response.json();
+                currentReportData = data;
+
+                // Display metadata
+                displayMetadata(data.metadata);
+
+                // Plot ECG
+                plotECG(data.time, data.signal, data.metadata.label);
+
+                // Plot Heat Map
+                plotHeatMap(data.heatmap.times, data.heatmap.scores, data.time, data.signal);
+
+                // Plot Spectrogram
+                plotSpectrogram(data.spectrogram);
+
+                // Hide loading spinners
+                document.getElementById('loadingEcg').style.display = 'none';
+                document.getElementById('loadingHeatmap').style.display = 'none';
+                document.getElementById('loadingSpectrogram').style.display = 'none';
+
+            } catch (error) {
+                console.error('Error loading report:', error);
+                alert('Error loading report data');
+            }
+        }
+
+        // Display metadata badges
+        function displayMetadata(metadata) {
+            const container = document.getElementById('metadataDisplay');
+            container.innerHTML = `
+                <span class="metric-badge">QRS: ${metadata.qrs} ms</span>
+                <span class="metric-badge">QT: ${metadata.qt} ms</span>
+                <span class="metric-badge">PR: ${metadata.pr} ms</span>
+                <span class="metric-badge">HR: ${metadata.hr} bpm</span>
+            `;
+        }
+
+        // Plot interactive ECG waveform
+        function plotECG(time, signal, label) {
+            const trace = {
+                x: time,
+                y: signal,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'ECG Signal',
+                line: {
+                    color: '#667eea',
+                    width: 2
+                }
+            };
+
+            const layout = {
+                title: `ECG Waveform - ${label}`,
+                xaxis: {
+                    title: 'Time (seconds)',
+                    gridcolor: '#e0e0e0'
+                },
+                yaxis: {
+                    title: 'Amplitude (mV)',
+                    gridcolor: '#e0e0e0'
+                },
+                hovermode: 'x unified',
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: 'white'
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+                displaylogo: false
+            };
+
+            Plotly.newPlot('ecgPlot', [trace], layout, config);
+        }
+
+        // Plot arrhythmia heat map
+        function plotHeatMap(windowTimes, scores, fullTime, fullSignal) {
+            // Create bar plot for abnormality scores
+            const trace1 = {
+                x: windowTimes,
+                y: scores,
+                type: 'bar',
+                name: 'Abnormality Score',
+                marker: {
+                    color: scores,
+                    colorscale: 'Hot',
+                    showscale: true,
+                    colorbar: {
+                        title: 'Score'
+                    }
+                }
+            };
+
+            const layout = {
+                title: 'Arrhythmia Heat Map - Abnormality Detection',
+                xaxis: {
+                    title: 'Time (seconds)'
+                },
+                yaxis: {
+                    title: 'Abnormality Score'
+                },
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: 'white'
+            };
+
+            const config = {
+                responsive: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('heatmapPlot', [trace1], layout, config);
+        }
+
+        // Plot 3D spectrogram
+        function plotSpectrogram(spectrogramData) {
+            const trace = {
+                x: spectrogramData.times,
+                y: spectrogramData.frequencies,
+                z: spectrogramData.intensity,
+                type: 'heatmap',
+                colorscale: 'Viridis',
+                colorbar: {
+                    title: 'Power (dB)'
+                }
+            };
+
+            const layout = {
+                title: 'Time-Frequency Spectrogram',
+                xaxis: {
+                    title: 'Time (seconds)'
+                },
+                yaxis: {
+                    title: 'Frequency (Hz)'
+                },
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: 'white'
+            };
+
+            const config = {
+                responsive: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('spectrogramPlot', [trace], layout, config);
+        }
+
+        // Load comparison data
+        async function loadComparison() {
+            const reportA = document.getElementById('compareReportA').value;
+            const reportB = document.getElementById('compareReportB').value;
+
+            if (!reportA || !reportB) {
+                alert('Please select both reports for comparison');
+                return;
+            }
+
+            document.getElementById('loadingComparison').style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/ecg_compare?report_a=${reportA}&report_b=${reportB}`);
+                const data = await response.json();
+
+                plotComparison(data);
+
+                document.getElementById('loadingComparison').style.display = 'none';
+
+            } catch (error) {
+                console.error('Error loading comparison:', error);
+                alert('Error loading comparison data');
+            }
+        }
+
+        // Plot side-by-side comparison
+        function plotComparison(data) {
+            const trace1 = {
+                x: data.report_a.time,
+                y: data.report_a.signal,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data.report_a.patient} - ${data.report_a.label}`,
+                line: {
+                    color: '#667eea',
+                    width: 2
+                }
+            };
+
+            const trace2 = {
+                x: data.report_b.time,
+                y: data.report_b.signal,
+                type: 'scatter',
+                mode: 'lines',
+                name: `${data.report_b.patient} - ${data.report_b.label}`,
+                line: {
+                    color: '#f093fb',
+                    width: 2
+                },
+                yaxis: 'y2'
+            };
+
+            const layout = {
+                title: 'Comparative ECG Analysis',
+                xaxis: {
+                    title: 'Time (seconds)',
+                    domain: [0, 1]
+                },
+                yaxis: {
+                    title: `Report A - ${data.report_a.patient}`,
+                    side: 'left',
+                    color: '#667eea'
+                },
+                yaxis2: {
+                    title: `Report B - ${data.report_b.patient}`,
+                    side: 'right',
+                    overlaying: 'y',
+                    color: '#f093fb'
+                },
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: 'white',
+                hovermode: 'x unified'
+            };
+
+            const config = {
+                responsive: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('comparisonPlot', [trace1, trace2], layout, config);
+
+            // Display comparison metrics
+            displayComparisonMetrics(data.report_a, data.report_b);
+        }
+
+        // Display comparison metrics
+        function displayComparisonMetrics(reportA, reportB) {
+            const container = document.getElementById('comparisonMetrics');
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <h5>Report A: ${reportA.patient}</h5>
+                                <p class="mb-1"><strong>Diagnosis:</strong> ${reportA.label}</p>
+                                <p class="mb-1"><strong>QRS:</strong> ${reportA.qrs} ms</p>
+                                <p class="mb-1"><strong>QT:</strong> ${reportA.qt} ms</p>
+                                <p class="mb-1"><strong>PR:</strong> ${reportA.pr} ms</p>
+                                <p class="mb-0"><strong>HR:</strong> ${reportA.hr} bpm</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                                <h5>Report B: ${reportB.patient}</h5>
+                                <p class="mb-1"><strong>Diagnosis:</strong> ${reportB.label}</p>
+                                <p class="mb-1"><strong>QRS:</strong> ${reportB.qrs} ms</p>
+                                <p class="mb-1"><strong>QT:</strong> ${reportB.qt} ms</p>
+                                <p class="mb-1"><strong>PR:</strong> ${reportB.pr} ms</p>
+                                <p class="mb-0"><strong>HR:</strong> ${reportB.hr} bpm</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

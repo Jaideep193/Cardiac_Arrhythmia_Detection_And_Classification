@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECG Image Analysis</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Markdown Parser for AI responses -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg,#f0f9ff,#e8fff5); min-height: 100vh; }
+    .navbar { background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); }
+    .card { background: rgba(255,255,255,0.9); border: none; border-radius: 16px; box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
+    .btn-primary { background: linear-gradient(90deg,#00c853,#00bfa5); border: none; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .ecg-img { max-height: 280px; object-fit: contain; }
+    .results-section { background: #f8f9fa; border-radius: 12px; padding: 20px; margin-top: 20px; }
+    
+    /* AI Section Styles */
+    .ai-box {
+      background: #ffffff;
+      border: 1px solid #e3e6f0;
+      border-left: 5px solid #6f42c1;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .btn-ai {
+      background: linear-gradient(135deg, #6f42c1, #8e44ad);
+      color: white;
+      border-radius: 20px;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      transition: all 0.3s ease;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-ai:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(111, 66, 193, 0.4);
+      color: white;
+      text-decoration: none;
+    }
+    .ai-content {
+      margin-top: 20px;
+      font-size: 0.95rem;
+      color: #2d3748;
+      line-height: 1.6;
+      display: none;
+      background: #f8f9fc;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e3e6f0;
+    }
+    .ai-spinner { display: none; margin-left: 10px; color: #6f42c1; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-sm fixed-top navbar-light">
+    <a class="navbar-brand" href="{{ url_for('home') }}">Arrhythmia Detection</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('fetalPage') }}">Manual Input</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container" style="padding-top: 90px;">
+    <div class="card p-4">
+      <h2 class="mb-3">Upload ECG Image for Analysis</h2>
+      {% if status %}
+        <div class="alert alert-info">{{ status }}</div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('upload_ecg_image') }}" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group col-md-4">
+            <label>Patient Name (optional)</label>
+            <input type="text" class="form-control" name="name" value="{{ name or '' }}">
+          </div>
+          <div class="form-group col-md-8">
+            <label>ECG Image</label>
+            <input type="file" class="form-control" name="ecg_image" accept="image/*" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-4">
+            <label>Paper Speed (mm/s)</label>
+            <select class="form-control" name="mm_per_sec">
+              <option value="25" {% if mm_per_sec == 25 %}selected{% endif %}>25 (standard)</option>
+              <option value="50" {% if mm_per_sec == 50 %}selected{% endif %}>50</option>
+            </select>
+          </div>
+          <div class="form-group col-md-4">
+            <label>Amplitude Gain (mm/mV)</label>
+            <select class="form-control" name="mm_per_mv">
+              <option value="10" {% if mm_per_mv == 10 %}selected{% endif %}>10 (standard)</option>
+              <option value="5" {% if mm_per_mv == 5 %}selected{% endif %}>5</option>
+              <option value="20" {% if mm_per_mv == 20 %}selected{% endif %}>20</option>
+            </select>
+          </div>
+          <div class="form-group col-md-4">
+            <label>Optional Heart Rate Override (bpm)</label>
+            <input type="number" class="form-control" name="hr_override" value="{{ hr_override or '' }}" placeholder="Leave blank to auto-detect">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-heart-pulse"></i> Upload & Analyze</button>
+      </form>
+
+      {% if image_path %}
+      <div class="mt-4 text-center">
+        <h5>Uploaded Image</h5>
+        <img class="img-fluid" src="/{{ image_path }}" alt="ECG Image">
+      </div>
+      {% endif %}
+
+      {% if values %}
+      <div class="results-section">
+        <h3 class="mb-3"><i class="fa-solid fa-check-circle" style="color:#00c853;"></i> Analysis Results</h3>
+        <h4>Status: <span class="text-success font-weight-bold" id="res-status">{{ status }}</span></h4>
+        {% if confidence %}
+        <div class="alert alert-secondary mt-2">
+          <strong>Detection Confidence:</strong> 
+          <div class="progress mt-2" style="height: 25px;">
+            <div id="ecg-confidence-bar" class="progress-bar" role="progressbar" style="background: linear-gradient(90deg,#00c853,#00bfa5);" data-confidence="{{ (confidence * 100)|round(0)|int }}" aria-valuemin="0" aria-valuemax="100">
+              {{ (confidence * 100)|round(0)|int }}%
+            </div>
+          </div>
+          <small class="text-muted">Higher confidence = more reliable intervals</small>
+        </div>
+        {% endif %}
+        {% if name %}
+        <div class="mt-2">
+          <strong>Patient:</strong> {{ name }}<br>
+          <strong>Deviation from average QRS:</strong> {{ cent }}%
+          <div class="small text-muted">Paper speed {{ mm_per_sec }} mm/s · Gain {{ mm_per_mv }} mm/mV{% if hr_override %} · HR override used{% endif %}</div>
+        </div>
+        {% endif %}
+
+        <div class="mt-3">
+          <h5><i class="fa-solid fa-file-medical" style="color:#0088aa;"></i> Derived Values</h5>
+          
+          <!-- Hidden Data Store for AI -->
+          <div id="ecg-data-store" 
+               data-qrs="{{ values.qrs }}"
+               data-qt="{{ values.qt }}"
+               data-t="{{ values.t }}"
+               data-pr="{{ values.pr }}"
+               data-p="{{ values.p }}"
+               data-hr="{{ values.heart_rate }}"
+               style="display:none;"></div>
+
+          <table class="table table-sm table-bordered">
+            <tbody>
+              <tr><td><strong>QRS</strong></td><td>{{ values.qrs }} ms</td></tr>
+              <tr><td><strong>QT</strong></td><td>{{ values.qt }} ms</td></tr>
+              <tr><td><strong>T</strong></td><td>{{ values.t }} ms</td></tr>
+              <tr><td><strong>PR</strong></td><td>{{ values.pr }} ms</td></tr>
+              <tr><td><strong>P</strong></td><td>{{ values.p }} ms</td></tr>
+              <tr><td><strong>Heart Rate</strong></td><td>{{ values.heart_rate }} bpm</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        {% if risk %}
+        <div class="mt-3">
+          <h5><i class="fa-solid fa-shield-heart" style="color:#ff6b6b;"></i> Risk Assessment</h5>
+          <ul id="risk-list">
+            {% for r in risk %}
+              <li>{{ r }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- Gemini AI Section -->
+        <div class="ai-box">
+          <h4 style="color:#6f42c1; font-weight:700; margin-bottom: 15px;">
+            <i class="fa-solid fa-robot"></i> AI Analysis Assistant
+          </h4>
+          <p class="text-muted small mb-3">Powered by Gemini. Click below to interpret these specific image analysis results.</p>
+          
+          <div>
+            <button class="btn btn-ai" onclick="explainImageMetrics()">
+              <i class="fa-solid fa-magnifying-glass-chart"></i> Explain Findings ✨
+            </button>
+            <button class="btn btn-ai" onclick="getHealthTips()">
+              <i class="fa-solid fa-user-doctor"></i> Recommendations ✨
+            </button>
+            <span id="ai-spinner" class="ai-spinner"><i class="fa-solid fa-circle-notch fa-spin fa-lg"></i> Processing...</span>
+          </div>
+          
+          <div id="ai-result-container" class="ai-content"></div>
+        </div>
+
+        {% if pdf_filename %}
+        <div class="mt-4">
+          <div class="alert alert-success" style="background: linear-gradient(90deg,#e0ffe0,#c8ffc8); border: 2px solid #00c853;">
+            <div class="text-center">
+              <h5 style="color:#004d40; margin-bottom: 15px;"><i class="fa-solid fa-download"></i> Download Analysis Results</h5>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <a href="{{ url_for('static', filename=pdf_filename) }}" class="btn btn-danger btn-block" style="background: linear-gradient(90deg,#ff6b6b,#ff5252); border: none; padding: 12px 20px; font-weight: bold;">
+                    <i class="fa-solid fa-file-pdf"></i> PDF Report
+                  </a>
+                </div>
+                {% if csv_filename %}
+                <div class="col-md-6">
+                  <a href="{{ url_for('static', filename=csv_filename) }}" class="btn btn-info btn-block" style="background: linear-gradient(90deg,#00c853,#00bfa5); border: none; padding: 12px 20px; font-weight: bold;">
+                    <i class="fa-solid fa-file-csv"></i> CSV Data
+                  </a>
+                </div>
+                {% endif %}
+              </div>
+              <p class="small text-muted mt-2">Complete cardiac analysis report and raw data</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </main>
+{% if confidence %}
+<script>
+(function(){
+  var bar = document.getElementById('ecg-confidence-bar');
+  if(bar){
+    var val = parseInt(bar.getAttribute('data-confidence') || '0', 10);
+    bar.style.width = val + '%';
+    bar.setAttribute('aria-valuenow', val);
+  }
+})();
+</script>
+{% endif %}
+
+<!-- Gemini API Script -->
+<script>
+  // API CONFIGURATION
+  const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Insert Key Here or Configure Backend Proxy
+  const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+
+  async function callGemini(prompt) {
+      const spinner = document.getElementById('ai-spinner');
+      const resultContainer = document.getElementById('ai-result-container');
+      
+      spinner.style.display = 'inline-block';
+      resultContainer.style.display = 'none';
+      resultContainer.innerHTML = ''; // Clear previous results
+      
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${apiKey}`;
+      const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+      try {
+          const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          
+          if (!response.ok) {
+             throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated. Please try again.";
+          
+          resultContainer.innerHTML = marked.parse(text);
+          resultContainer.style.display = 'block';
+      } catch (error) {
+          resultContainer.innerHTML = '<span class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Error: Could not connect to AI service. Please check your internet connection or API key.</span>';
+          resultContainer.style.display = 'block';
+          console.error("Gemini API Error:", error);
+      } finally {
+          spinner.style.display = 'none';
+      }
+  }
+
+  function explainImageMetrics() {
+      const dataStore = document.getElementById('ecg-data-store');
+      if (!dataStore) return;
+      
+      const data = dataStore.dataset;
+      const status = document.getElementById('res-status')?.innerText || "Unknown";
+      
+      const prompt = `
+          You are an expert cardiologist assistant aiding a patient.
+          An automated system analyzed their ECG image and extracted these values:
+          - Heart Rate: ${data.hr} bpm
+          - QRS Interval: ${data.qrs} ms
+          - QT Interval: ${data.qt} ms
+          - PR Interval: ${data.pr} ms
+          - Analysis Result: ${status}
+
+          Please briefly explain (in under 100 words):
+          1. Whether these specific intervals are generally considered normal.
+          2. How they might relate to the analysis result (${status}).
+          Use simple, reassuring language but be medically accurate.
+      `;
+      callGemini(prompt);
+  }
+
+  function getHealthTips() {
+      const status = document.getElementById('res-status')?.innerText || "Unknown Condition";
+      const riskListElement = document.getElementById('risk-list');
+      const risks = riskListElement ? riskListElement.innerText : "General monitoring";
+      
+      const prompt = `
+          The user has performed an ECG image analysis.
+          Detected Condition: ${status}.
+          Risks/Precautions listed by system: ${risks}.
+
+          Based on this, provide 3 short, actionable bullet points for immediate next steps or lifestyle adjustments.
+          End with a standard medical disclaimer.
+      `;
+      callGemini(prompt);
+  }
+</script>
+</body>
+</html>

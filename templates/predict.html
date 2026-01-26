@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detection and Classification Of Cardiac Arrhythmia</title>
+  <link rel="icon" href="{{ url_for('static', filename='logo1.png') }}" type="image/icon type">
+
+  <!-- Bootstrap + Fonts + Icons -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Markdown Parser for AI responses -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #008ba3;
+      --secondary-color: #00acc1;
+      --accent-green: #00e676;
+      --bg-gradient-start: #f0f4f8;
+      --bg-gradient-end: #d9e2ec;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --text-main: #102a43;
+      --text-muted: #627d98;
+      --monitor-bg: #050a14;
+      --ai-purple: #7928ca;
+    }
+
+    /* 🌈 Base Style & Medical Pattern Background */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-gradient-start);
+      background-image: 
+        radial-gradient(var(--secondary-color) 1px, transparent 1px),
+        radial-gradient(var(--secondary-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+      color: var(--text-main);
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Overlay gradient to soften the dots */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at top left, rgba(240, 244, 248, 0.9), rgba(217, 226, 236, 0.9));
+      z-index: -1;
+    }
+
+    /* Glassmorphism Navbar */
+    .navbar {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 1rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .navbar-brand {
+      font-weight: 700;
+      color: var(--primary-color) !important;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .nav-link {
+      color: var(--text-main) !important;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-link:hover {
+      color: var(--primary-color) !important;
+      transform: translateY(-1px);
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background-color: var(--primary-color);
+      transition: width 0.3s;
+    }
+    
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* Realistic ECG Monitor Container */
+    .ecg-container {
+      position: relative;
+      width: 90%;
+      max-width: 900px;
+      margin: 110px auto 40px auto;
+      height: 160px;
+      background-color: var(--monitor-bg);
+      border-radius: 12px;
+      /* Deep shadow for depth + inset for bezel effect */
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2), inset 0 0 0 2px #334e68;
+      overflow: hidden;
+      
+      /* Detailed Grid Pattern */
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+      border: 1px solid #102a43;
+    }
+
+    /* CRT Scanline & Glare Effect */
+    .ecg-container::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+      z-index: 5;
+      background-size: 100% 2px, 6px 100%;
+      pointer-events: none;
+    }
+
+    .ecg-container::after {
+      content: "LIVE MONITORING ●";
+      position: absolute;
+      top: 12px;
+      right: 20px;
+      color: #00ff88;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      z-index: 6;
+      text-shadow: 0 0 5px rgba(0, 255, 136, 0.8);
+      animation: blinkText 1.5s infinite;
+    }
+
+    @keyframes blinkText {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* SVG Styling */
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: blur(0.4px); /* Slight blur for CRT feel */
+    }
+
+    .wave-path {
+      fill: none;
+      stroke: var(--accent-green);
+      stroke-width: 3;
+      filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.8));
+      animation: moveWave 3s linear infinite;
+    }
+
+    @keyframes moveWave {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* Heart Icon Overlay */
+    .heart-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 45px;
+      color: #ff3d5a;
+      z-index: 10;
+      background: radial-gradient(circle, rgba(16, 42, 67, 0.9) 0%, rgba(16, 42, 67, 0) 70%);
+      padding: 15px;
+      border-radius: 50%;
+      animation: heartBeat 1.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+
+    @keyframes heartBeat {
+      0% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 0 0 rgba(255, 61, 90, 0.7); }
+      70% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 0 15px rgba(255, 61, 90, 0); }
+      100% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 0 0 rgba(255, 61, 90, 0); }
+    }
+
+    /* Main Result Card with Entrance Animation */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05), 0 5px 15px rgba(0,0,0,0.05);
+      padding: 3.5rem 3rem;
+      max-width: 900px;
+      margin: 20px auto;
+      border-top: 6px solid var(--primary-color);
+      position: relative;
+      animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+      overflow: hidden; /* For floating icons */
+    }
+
+    /* Decorative Floating Background Icons */
+    .floating-icon {
+      position: absolute;
+      color: var(--primary-color);
+      opacity: 0.03;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    .fi-1 { top: 10px; right: 20px; font-size: 8rem; transform: rotate(15deg); }
+    .fi-2 { bottom: -20px; left: -20px; font-size: 10rem; transform: rotate(-10deg); }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1.display-4 {
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+      position: relative; 
+      z-index: 1;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 10px 25px;
+      border-radius: 50px;
+      background: rgba(0, 200, 83, 0.08);
+      color: #00a844;
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 25px;
+      border: 1px solid rgba(0, 200, 83, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 200, 83, 0.15);
+      animation: glowPulse 3s infinite alternate;
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes glowPulse {
+      from { box-shadow: 0 4px 15px rgba(0, 200, 83, 0.1); }
+      to { box-shadow: 0 4px 25px rgba(0, 200, 83, 0.3); }
+    }
+
+    .section-title {
+      color: var(--primary-color);
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-top: 1.8rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid rgba(0, 139, 163, 0.1);
+      padding-bottom: 5px;
+      position: relative; 
+      z-index: 1;
+    }
+    
+    .info-box {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--secondary-color);
+      text-align: left;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative; 
+      z-index: 1;
+    }
+
+    .info-box:hover {
+      transform: translateX(5px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+    }
+
+    .info-box p, .info-box li {
+      margin-bottom: 8px;
+      color: #334e68;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    
+    /* Progress Bar for Deviation */
+    .deviation-container {
+        margin-top: 8px;
+    }
+    .progress-wrapper {
+        height: 10px;
+        background: #e9ecef;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+    .progress-bar-custom {
+        height: 100%;
+        background: linear-gradient(90deg, #ff8a80, #d32f2f);
+        border-radius: 5px;
+        transition: width 1s ease-in-out;
+        width: var(--progress-width, 0%); /* use CSS variable set on the element to avoid template syntax inside CSS */
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border: none;
+      border-radius: 50px; /* Pill shape for modern look */
+      padding: 12px 35px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 8px 20px rgba(0, 139, 163, 0.25);
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 25px rgba(0, 139, 163, 0.35);
+      background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    }
+
+    .btn-outline-primary {
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+      border-radius: 50px;
+      padding: 10px 30px;
+      font-weight: 600;
+      transition: all 0.3s;
+      position: relative; z-index: 1;
+    }
+    
+    .btn-outline-primary:hover {
+      background: var(--primary-color);
+      color: #fff;
+      box-shadow: 0 5px 15px rgba(0, 139, 163, 0.2);
+    }
+
+    /* AI Button Styles */
+    .btn-ai {
+      background: linear-gradient(135deg, #7928ca, #ff0080); /* Modern vivid gradient */
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(121, 40, 202, 0.25);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-ai:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(121, 40, 202, 0.4);
+      color: white;
+      text-decoration: none;
+    }
+    
+    /* Subtle shine effect on hover for AI buttons */
+    .btn-ai::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+    }
+    
+    .btn-ai:hover::after {
+      left: 100%;
+    }
+
+    .ai-avatar-container {
+        width: 60px; height: 60px; 
+        background: #f3e5f5; 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 5px 15px rgba(121, 40, 202, 0.15);
+        border: 2px solid #fff;
+    }
+
+    .ai-response-box {
+      background: #fcf9ff;
+      border: 1px solid rgba(121, 40, 202, 0.2);
+      border-radius: 16px;
+      padding: 25px;
+      margin-top: 25px;
+      text-align: left;
+      display: none;
+      animation: fadeIn 0.5s ease;
+      box-shadow: 0 10px 30px rgba(121, 40, 202, 0.05);
+    }
+
+    .ai-response-box h4 {
+      color: var(--ai-purple);
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .ai-response-content {
+      color: #4a5568;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loading Spinner for AI */
+    .ai-spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+      margin-left: 8px;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Image Styling */
+    .ecg-image-container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.03);
+      transition: transform 0.3s;
+    }
+    
+    .ecg-image-container:hover {
+      transform: translateY(-5px);
+    }
+    
+    .ecg-img {
+      border: 1px solid #edf2f7;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.7);
+      border-top: 1px solid #eaeaea;
+      padding: 25px;
+      margin-top: auto;
+      font-size: 0.9rem;
+      backdrop-filter: blur(5px);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-sm fixed-top navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('home') }}">
+        <i class="fa-solid fa-heart-pulse fa-lg" style="color:var(--primary-color)"></i> 
+        <span>Cardio<span style="color:var(--text-main)">AI</span></span>
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('fetalPage') }}"><i class="fa-solid fa-microscope mr-1"></i> Detection</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ECG Line Animation (Monitor Style) -->
+  <div class="ecg-container">
+    <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path class="wave-path" d="
+        M0,100 L80,100 L100,60 L120,160 L140,100 
+        L220,100 L240,80 L260,120 L280,100 
+        L360,100 L380,60 L400,160 L420,100 
+        L500,100 L520,80 L540,120 L560,100 
+        L640,100 L660,60 L680,160 L700,100 
+        L780,100 L800,100" />
+    </svg>
+    <div class="heart-icon"><i class="fa-solid fa-heart"></i></div>
+  </div>
+
+  <!-- Main Result Card -->
+  <main class="container text-center">
+    <div class="card">
+      <!-- Decorative Floating Icons -->
+      <i class="fa-solid fa-heart-pulse floating-icon fi-1"></i>
+      <i class="fa-solid fa-file-medical floating-icon fi-2"></i>
+
+      <h1 class="display-4">Patient: <strong>{{name}}</strong></h1>
+      
+      <!-- Status Badge -->
+      <div>
+        <span class="status-badge" id="patientStatus">
+          {{status}}
+        </span>
+      </div>
+
+      <a href="{{ url_for('fetalPage') }}" class="btn btn-outline-primary mb-4">
+        <i class="fa-solid fa-rotate-right mr-2"></i>Analyze Another Patient
+      </a>
+
+      {% if pred != 1 %}
+      <div class="row text-left mt-4">
+        <!-- Risk Assessment Column -->
+        <div class="col-md-6">
+          <div class="section-title"><i class="fa-solid fa-triangle-exclamation"></i> Risk Assessment</div>
+          <div class="info-box">
+             <div class="d-flex justify-content-between align-items-center">
+                 <span><strong>Risk Level:</strong></span>
+                 <span id="riskLevel" style="font-weight:700; color: #d32f2f; background:#ffebee; padding:2px 10px; border-radius:4px;">{{risk[0]}}</span>
+             </div>
+             
+             <!-- Visual Deviation Progress Bar -->
+             <div class="deviation-container mt-3">
+                 <div class="d-flex justify-content-between small text-muted">
+                    <span>Deviation from Normal</span>
+                    <span>{{cent}}&#37;</span>
+                 </div>
+                 <div class="progress-wrapper">
+                    <div class="progress-bar-custom" style="--progress-width: {{ cent }}%;"></div>
+                 </div>
+             </div>
+          </div>
+
+          <div class="section-title"><i class="fa-solid fa-shield-heart"></i> Precautions</div>
+          <div class="info-box">
+            <ul class="mb-0 pl-3 list-unstyled" id="precautionsList">
+              <li class="mb-2"><i class="fa-solid fa-check-circle text-success mr-2"></i> {{risk[1]}}</li>
+              <li class="mb-0"><i class="fa-solid fa-check-circle text-success mr-2"></i> {{risk[2]}}</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Lifestyle Column -->
+        <div class="col-md-6">
+          <div class="section-title"><i class="fa-solid fa-person-running"></i> Lifestyle Plan</div>
+          <div class="info-box">
+            <ul class="mb-0 pl-3 list-unstyled">
+              <li class="mb-2"><i class="fa-solid fa-apple-whole text-info mr-2"></i> {{risk[3]}}</li>
+              <li class="mb-0"><i class="fa-solid fa-person-walking text-info mr-2"></i> {{risk[4]}}</li>
+            </ul>
+          </div>
+          
+          <div class="mt-4 p-3 rounded position-relative" style="background-color: #e1f5fe; border: 1px dashed #0288d1; color: #01579b; z-index:1;">
+            <p class="mb-0 text-center" style="font-size: 0.95rem;">
+              <i class="fa-solid fa-user-doctor mr-1"></i> <strong>Medical Advisory:</strong> Immediate doctor consultation is recommended based on these findings.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Assistant Section -->
+      <hr class="my-5" style="border-top: 1px solid rgba(0,0,0,0.05);">
+      <div class="mt-4">
+        <!-- AI Avatar -->
+        <div class="ai-avatar-container">
+            <i class="fa-solid fa-robot fa-lg" style="color: var(--ai-purple);"></i>
+        </div>
+
+        <h4 style="color: var(--ai-purple); font-weight: 700; margin-bottom: 25px; letter-spacing: 0.5px;">
+          AI Health Assistant
+        </h4>
+        <div class="d-flex justify-content-center flex-wrap" style="gap: 20px;">
+          <button onclick="generateAISummary()" class="btn btn-ai">
+            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Explain Results ✨
+            <span class="ai-spinner" id="spinner-summary"></span>
+          </button>
+          
+          <button onclick="generateDietPlan()" class="btn btn-ai" style="background: linear-gradient(135deg, #00c853, #64dd17);">
+            <i class="fa-solid fa-carrot mr-2"></i>Dietary Tips ✨
+            <span class="ai-spinner" id="spinner-diet"></span>
+          </button>
+        </div>
+
+        <!-- AI Output Box -->
+        <div id="aiOutputBox" class="ai-response-box mx-auto" style="max-width: 800px;">
+          <h4 id="aiTitle">AI Insights</h4>
+          <div id="aiContent" class="ai-response-content"></div>
+        </div>
+      </div>
+
+      <hr class="my-5" style="border-top: 1px solid rgba(0,0,0,0.05);">
+
+      <div class="text-center position-relative" style="z-index:1;">
+        <p class="text-muted mb-3 font-weight-bold">Trusted Medical Resources</p>
+        <a class="btn btn-outline-primary mx-2 btn-sm" href="https://www.who.int/" target="_blank">WHO Guidelines</a>
+        <a class="btn btn-outline-primary mx-2 btn-sm" href="https://ihrs.in/" target="_blank">Find Specialist</a>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+
+  <!-- Generated Graphs Section -->
+  {% if ecg_path %}
+  <div class="container mt-5 mb-5">
+    <div class="ecg-image-container text-center">
+      <h3 style="color:var(--text-main); font-weight:700;">Computed ECG Signal</h3>
+      <p class="text-muted">Dynamically generated based on intervals (QRS, QT, PR, P, T)</p>
+      
+      <img src="{{ url_for('static', filename='ecg_signal.png') }}" 
+           alt="ECG Signal Graph"
+           class="img-fluid ecg-img mt-4 shadow-sm">
+           
+      {% if ecg_path %}
+       <!-- Fallback or secondary image if logic requires showing both -->
+       <img src="{{ url_for('static', filename='ecg_signal_simple.png') }}" 
+           alt="ECG Signal Simple"
+           class="img-fluid ecg-img mt-4 shadow-sm">
+      {% endif %}
+
+      <div class="mt-5">
+        <a href="/ecg_animated?qrs={{ qrsint }}&qt={{ qtint }}&t={{ tint }}&p_r={{ p_rint }}&p={{ pint }}"
+           target="_blank"
+           class="btn btn-primary btn-lg shadow-lg">
+           <i class="fa-solid fa-play mr-2"></i>View Full Live Animation
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Cardiac Arrhythmia Classification System. All rights reserved.</p>
+    </div>
+  </footer>
+  
+  <!-- JS -->
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- Gemini API Integration Script -->
+  <script>
+    // ⚠️ IMPORTANT: In a real production app, never expose your API key in client-side code.
+    // Use a backend proxy. For this demo/prototype, we use the key directly.
+    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // The execution environment provides this automatically in the preview, 
+                       // but for your Flask app, you'll need to insert your key here.
+
+    const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+    
+    async function callGeminiAPI(prompt, spinnerId) {
+      const spinner = document.getElementById(spinnerId);
+      const outputBox = document.getElementById('aiOutputBox');
+      const contentDiv = document.getElementById('aiContent');
+      
+      // UI Reset
+      spinner.style.display = 'inline-block';
+      outputBox.style.display = 'none';
+      contentDiv.innerHTML = '';
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response at this time.";
+
+        // Render Markdown
+        contentDiv.innerHTML = marked.parse(aiText);
+        outputBox.style.display = 'block';
+      } catch (error) {
+        console.error("Gemini API Error:", error);
+        contentDiv.innerHTML = `<span class="text-danger">Error connecting to AI Assistant. Please check your API key or connection.</span>`;
+        outputBox.style.display = 'block';
+      } finally {
+        spinner.style.display = 'none';
+      }
+    }
+
+    function generateAISummary() {
+      // Gather context from the DOM (rendered by Jinja)
+      const status = document.getElementById('patientStatus')?.innerText || "Unknown";
+      const risk = document.getElementById('riskLevel')?.innerText || "Unknown";
+      // Gather precautions text
+      const precautions = document.getElementById('precautionsList')?.innerText || "";
+
+      document.getElementById('aiTitle').innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Results Explanation';
+      
+      const prompt = `
+        You are a compassionate, professional cardiologist assistant.
+        The patient's arrhythmia analysis shows:
+        - Status: ${status}
+        - Risk Level: ${risk}
+        - Precautions listed: ${precautions}
+
+        Please write a short, comforting summary (approx 50-70 words) for the patient explaining what this means in simple, non-medical language. 
+        Reassure them but emphasize following the doctor's advice.
+      `;
+
+      callGeminiAPI(prompt, 'spinner-summary');
+    }
+
+    function generateDietPlan() {
+      const status = document.getElementById('patientStatus')?.innerText || "Unknown";
+
+      document.getElementById('aiTitle').innerHTML = '<i class="fa-solid fa-carrot mr-2"></i>Heart-Healthy Dietary Tips';
+      
+      const prompt = `
+        You are a nutritionist specializing in cardiac health.
+        The patient has been diagnosed with: ${status}.
+        
+        Provide 3 specific, bulleted dietary tips that are beneficial for this specific heart condition.
+        Keep it brief and actionable.
+      `;
+
+      callGeminiAPI(prompt, 'spinner-diet');
+    }
+  </script>
+</body>
+</html>

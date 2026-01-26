@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Doctor-Patient Assignments</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+    .page-header { background: rgba(255,255,255,0.95); color: #333; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .card { border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-0"><i class="fa fa-users me-2"></i>Doctor-Patient Assignments</h3>
+        <small>Manage team access and patient assignments</small>
+      </div>
+      <div>
+        <a href="{{ url_for('doctor_reports') }}" class="btn btn-light"><i class="fa fa-arrow-left me-1"></i>Dashboard</a>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-5">
+        <div class="card p-4">
+          <h5 class="mb-3">Create Assignment</h5>
+          <div class="mb-3">
+            <label class="form-label">Doctor</label>
+            <select id="doctor_id" class="form-select">
+              <option value="">Select doctor...</option>
+              {% for d in doctors %}
+                <option value="{{ d.id }}">{{ d.name }} ({{ d.role }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Patient</label>
+            <select id="patient_id" class="form-select">
+              <option value="">Select patient...</option>
+              {% for p in patients %}
+                <option value="{{ p.id }}">{{ p.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary w-100" onclick="createAssignment()"><i class="fa fa-plus me-1"></i>Assign</button>
+        </div>
+      </div>
+
+      <div class="col-md-7">
+        <div class="card p-4">
+          <h5 class="mb-3">Current Assignments</h5>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Doctor</th>
+                  <th>Patient</th>
+                  <th>Assigned</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="assignments_table">
+                {% for a in assignments %}
+                <tr data-id="{{ a.id }}">
+                  <td>{{ a.doctor_name }}</td>
+                  <td>{{ a.patient_name }}</td>
+                  <td><small class="text-muted">{{ a.assigned_at }}</small></td>
+                  <td><button class="btn btn-sm btn-danger" onclick="deleteAssignment({{ a.id }})"><i class="fa fa-trash"></i></button></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    async function createAssignment() {
+      const doctor_id = document.getElementById('doctor_id').value;
+      const patient_id = document.getElementById('patient_id').value;
+      if (!doctor_id || !patient_id) {
+        alert('Please select both doctor and patient');
+        return;
+      }
+      const payload = new URLSearchParams({ doctor_id, patient_id });
+      const res = await fetch('/api/assignments', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
+      const data = await res.json();
+      if (data.ok) {
+        alert('Assignment created');
+        location.reload();
+      } else {
+        alert('Error: ' + (data.error || 'Unknown'));
+      }
+    }
+
+    async function deleteAssignment(id) {
+      if (!confirm('Remove this assignment?')) return;
+      const res = await fetch(`/api/assignments/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.ok) {
+        document.querySelector(`tr[data-id="${id}"]`).remove();
+      } else {
+        alert('Error: ' + (data.error || 'Unknown'));
+      }
+    }
+  </script>
+</body>
+</html>

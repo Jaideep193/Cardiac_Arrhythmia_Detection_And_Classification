@@ -1,0 +1,18 @@
+Parameter,Value
+Patient Name,Shakar
+Status,Ventricular Premature Contraction (PVC)
+Risk Level,LOW
+Age,0
+Gender,Male
+Height,0
+Weight,0
+QRS (ms),60.0
+QT (ms),330.0
+T (ms),100.0
+PR (ms),200.0
+P (ms),120.0
+Heart Rate (bpm),230.8
+QRS Deviation %,83.66
+Confidence Score,0.13
+Paper Speed (mm/s),25.0
+Amplitude Gain (mm/mV),10.0

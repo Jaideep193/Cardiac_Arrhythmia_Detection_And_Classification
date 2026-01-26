@@ -1,0 +1,18 @@
+Parameter,Value
+Patient Name,Chiru
+Status,Sinus tachycardia
+Risk Level,LOW
+Age,0
+Gender,Male
+Height,0
+Weight,0
+QRS (ms),71.9
+QT (ms),384.8
+T (ms),143.9
+PR (ms),167.1
+P (ms),98.1
+Heart Rate (bpm),63.2
+QRS Deviation %,80.42
+Confidence Score,0.41
+Paper Speed (mm/s),25.0
+Amplitude Gain (mm/mV),10.0

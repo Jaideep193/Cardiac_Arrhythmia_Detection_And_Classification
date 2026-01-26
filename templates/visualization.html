@@ -1,0 +1,1353 @@
+<!doctype html> 
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MediVis - AI Powered ECG Analytics</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- Markdown Parser (for AI responses) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <style>
+    /* --- Hospital Theme Variables --- */
+    :root {
+      /* Medical Palette */
+      --med-primary: #0891b2;       /* Bright Cyan */
+      --med-primary-dark: #0e7490;  /* Deep Cyan */
+      --med-secondary: #06b6d4;     /* Light Cyan */
+      --med-light: #cffafe;         /* Very Light Cyan */
+      --med-accent: #ef4444;        /* Vibrant Red */
+      --med-success: #22c55e;       /* Fresh Green */
+      --med-warning: #f59e0b;       /* Warm Amber */
+      
+      /* AI Theme */
+      --ai-primary: #7c3aed;
+      --ai-light: #f3e5f5;
+      
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+      --shadow-md: 0 10px 35px rgba(0,0,0,0.1);
+      --shadow-hover: 0 20px 50px rgba(8, 145, 178, 0.25);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      /* Subtle ECG Grid Pattern Background */
+      background-image: linear-gradient(var(--med-light) 1px, transparent 1px),
+      linear-gradient(90deg, var(--med-light) 1px, transparent 1px);
+      background-size: 40px 40px;
+      font-family: 'Nunito', sans-serif;
+      color: var(--text-dark);
+      padding-bottom: 50px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* --- Navbar / Header Area --- */
+    .dashboard-header {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 1.2rem 0;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--med-primary), var(--med-secondary));
+      color: white;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 8px 24px rgba(8, 145, 178, 0.35);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .logo-icon:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 32px rgba(8, 145, 178, 0.45);
+    }
+
+    /* --- Cards --- */
+    .med-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      height: 100%;
+      position: relative;
+    }
+    
+    .med-card:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(8, 145, 178, 0.1);
+    }
+
+    .med-card-header {
+      background: white;
+      padding: 1.75rem;
+      border-bottom: 2px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .med-card-header.colored {
+        background: linear-gradient(135deg, var(--med-primary-dark) 0%, var(--med-primary) 100%);
+        color: white;
+        border: none;
+        padding: 2rem 1.75rem;
+    }
+
+    .med-card-title {
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .med-card-body {
+      padding: 1.5rem;
+    }
+
+    /* --- Chart Type Selector --- */
+    .chart-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 5px;
+    }
+
+    .chart-option {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 18px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      position: relative;
+    }
+
+    .chart-option:hover {
+      border-color: var(--med-secondary);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(8, 145, 178, 0.15);
+      background: linear-gradient(180deg, #f0f9ff 0%, white 100%);
+    }
+
+    .chart-option.active {
+      border-color: var(--med-primary);
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      box-shadow: 0 6px 16px rgba(8, 145, 178, 0.2);
+    }
+
+    .chart-option.active::after {
+      content: '\f00c';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--med-primary);
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .chart-option i {
+      font-size: 22px;
+      margin-bottom: 8px;
+      display: block;
+      color: var(--text-muted);
+      transition: color 0.3s;
+    }
+
+    .chart-option.active i {
+      color: var(--med-primary);
+      transform: scale(1.1);
+    }
+    
+    .chart-option span {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    /* --- Draggable Fields (Pills) --- */
+    .field-source-container {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      height: 100%;
+    }
+
+    .field-pill {
+      background: white;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      border-radius: 50px;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .field-pill:hover {
+      transform: translateX(6px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      border-color: var(--med-secondary);
+      background: linear-gradient(135deg, #f8fafc 0%, white 100%);
+    }
+
+    .field-pill i { width: 25px; margin-right: 8px; }
+
+    /* Specific colors for field types */
+    .field-pill[data-field="patient_name"] { border-left: 4px solid var(--med-primary); color: #0284c7; }
+    .field-pill[data-field="result"] { border-left: 4px solid var(--med-accent); color: #e11d48; }
+    .field-pill[data-field="class"] { border-left: 4px solid var(--med-warning); color: #d97706; }
+    .field-pill[data-field="created_at"] { border-left: 4px solid var(--med-success); color: #059669; }
+    .field-pill[data-field="file_type"] { border-left: 4px solid #8b5cf6; color: #7c3aed; }
+
+    /* --- Drop Zones --- */
+    .drop-zone-container {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      height: 100%;
+    }
+
+    .drop-zone {
+      flex: 1;
+      border: 2.5px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #f8fafc 0%, white 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      min-height: 140px;
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--med-primary);
+      background: rgba(8, 145, 178, 0.08);
+      transform: scale(1.03);
+      box-shadow: 0 8px 20px rgba(8, 145, 178, 0.15);
+    }
+
+    .drop-zone.has-content {
+      border: 2.5px solid var(--med-success);
+      background: rgba(34, 197, 94, 0.08);
+      box-shadow: 0 6px 16px rgba(34, 197, 94, 0.12);
+    }
+
+    .drop-zone-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    /* --- Buttons --- */
+    .btn-generate {
+      background: linear-gradient(135deg, white 0%, #f8fafc 100%);
+      color: var(--med-primary-dark);
+      border: 2px solid var(--med-primary);
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-weight: 700;
+      box-shadow: 0 6px 16px rgba(8, 145, 178, 0.2);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-generate:hover {
+      background: linear-gradient(135deg, var(--med-primary-dark), var(--med-primary));
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(8, 145, 178, 0.3);
+      border-color: var(--med-primary-dark);
+    }
+    
+    .btn-back {
+        border-radius: 50px;
+        border: 2.5px solid var(--med-primary);
+        color: var(--med-primary);
+        font-weight: 700;
+        padding: 8px 22px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-back:hover {
+        background: linear-gradient(135deg, var(--med-primary-dark), var(--med-primary));
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(8, 145, 178, 0.25);
+        border-color: var(--med-primary);
+    }
+    
+    /* --- AI Components --- */
+    .ai-input-group {
+        position: relative;
+        margin-bottom: 24px;
+        border-radius: 50px;
+        box-shadow: 0 10px 35px rgba(124, 58, 237, 0.18);
+        background: white;
+        padding: 6px;
+        border: 2px solid transparent;
+        background-image: linear-gradient(white, white), linear-gradient(135deg, #7c3aed, #a855f7);
+        background-origin: border-box;
+        background-clip: content-box, border-box;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .ai-input-group:focus-within {
+        box-shadow: 0 15px 45px rgba(124, 58, 237, 0.25);
+    }
+    
+    .ai-input {
+        border: none;
+        box-shadow: none;
+        padding-left: 24px;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    
+    .ai-input:focus {
+        box-shadow: none;
+        border: none;
+        outline: none;
+    }
+    
+    .btn-ai-magic {
+        border-radius: 50px;
+        background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+        color: white;
+        padding: 10px 28px;
+        font-weight: 700;
+        border: none;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-ai-magic:hover {
+        transform: scale(1.06);
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
+        color: white;
+    }
+    
+    .ai-insight-card {
+        background: linear-gradient(to right, #fef3c7 0%, #f3e8ff 100%);
+        border: 2px solid rgba(124, 58, 237, 0.15);
+        border-radius: var(--radius-md);
+        margin-top: 24px;
+        overflow: hidden;
+        animation: slideUp 0.5s ease-out;
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
+    }
+    
+    .ai-insight-header {
+        background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(243, 232, 255, 0.6) 100%);
+        padding: 14px 24px;
+        border-bottom: 2px solid rgba(124, 58, 237, 0.1);
+        color: #7c3aed;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .ai-insight-body {
+        padding: 24px;
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: #1e293b;
+    }
+
+    .loading-shimmer {
+        background: #f6f7f8;
+        background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+        background-repeat: no-repeat;
+        background-size: 1000px 100%; 
+        animation: shimmer 1s linear infinite forwards;
+        height: 20px;
+        width: 100%;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    
+    .ai-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* --- Chart Area --- */
+    .chart-display-area {
+      background: linear-gradient(180deg, white 0%, #f8fafc 100%);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      min-height: 520px;
+      position: relative;
+      border: 2px solid #f1f5f9;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .empty-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--text-muted);
+    }
+    
+    .empty-state-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.2;
+        color: var(--med-primary);
+    }
+
+    /* --- Stats Cards --- */
+    .stat-card {
+      background: white;
+      padding: 24px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      box-shadow: var(--shadow-md);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      border-bottom: 5px solid transparent;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-hover);
+    }
+    
+    .stat-icon-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .stat-card:hover .stat-icon-circle {
+        transform: scale(1.12);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--med-primary); }
+    
+    /* Animation classes */
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 180, 216, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 180, 216, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 180, 216, 0); }
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="brand-logo">
+        <div class="logo-icon pulse-animation">
+          <i class="fa-solid fa-heart-pulse"></i>
+        </div>
+        <div>
+          <h4 class="mb-0 fw-bold" style="color: var(--med-primary-dark);">MediVis</h4>
+          <span class="text-muted small" style="letter-spacing: 0.5px;">AI-ENHANCED ECG PORTAL</span>
+        </div>
+      </div>
+      
+      <div class="d-flex align-items-center gap-3">
+        <div class="d-none d-md-block text-end me-2">
+            <div class="fw-bold small text-dark">Dr. Dashboard</div>
+            <div class="text-muted" style="font-size: 0.7rem;">Cardiology Dept.</div>
+        </div>
+        <img src="https://ui-avatars.com/api/?name=Dr+Smith&background=00b4d8&color=fff" class="rounded-circle shadow-sm" width="40" height="40" alt="Profile">
+        <a href="{{ url_for('doctor_reports') }}" class="btn btn-back ms-2"><i class="fa fa-arrow-left me-1"></i> Return</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- AI Natural Language Builder -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-8">
+            <div class="input-group ai-input-group">
+                <span class="input-group-text bg-transparent border-0 text-primary ps-3">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </span>
+                <input type="text" class="form-control ai-input" id="aiQueryInput" placeholder="Describe the chart you want (e.g., 'Show me a donut chart of diagnosis results')">
+                <button class="btn btn-ai-magic" type="button" id="aiQueryBtn">
+                    Generate
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Stats Row -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="stat-card" style="border-bottom-color: var(--med-primary);">
+                <div class="stat-icon-circle" style="background: rgba(0, 180, 216, 0.1); color: var(--med-primary);">
+                    <i class="fa-solid fa-file-medical-alt"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 fw-bold">{{ total or 0 }}</h3>
+                    <div class="text-muted small text-uppercase fw-bold">Total Reports</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card" style="border-bottom-color: var(--med-accent);">
+                <div class="stat-icon-circle" style="background: rgba(255, 107, 107, 0.1); color: var(--med-accent);">
+                    <i class="fa-solid fa-heart-crack"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 fw-bold">Analyze</h3>
+                    <div class="text-muted small text-uppercase fw-bold">Identify Anomalies</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card" style="border-bottom-color: var(--med-success);">
+                <div class="stat-icon-circle" style="background: rgba(32, 201, 151, 0.1); color: var(--med-success);">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div>
+                    <h3 class="mb-0 fw-bold">20+</h3>
+                    <div class="text-muted small text-uppercase fw-bold">Chart Variations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Builder Interface -->
+    <div class="med-card shadow-lg mb-5">
+      <div class="med-card-header colored">
+        <div class="med-card-title">
+            <i class="fa fa-sliders-h"></i> Analytics Builder
+        </div>
+        <button id="generateChartBtn" class="btn-generate">
+            <i class="fa fa-bolt me-1"></i> Generate Analysis
+        </button>
+      </div>
+      
+      <div class="med-card-body bg-white">
+        <div class="row g-4">
+          
+          <!-- Column 1: Chart Type -->
+          <div class="col-lg-3 col-md-6 border-end-lg">
+            <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                <span class="badge bg-light text-dark border me-1">1</span> Visualization Type
+            </h6>
+            <div class="chart-selector-grid custom-scrollbar">
+              <!-- Bar -->
+              <div class="chart-option active" data-type="bar">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Vertical Bar</span>
+              </div>
+              <!-- Horizontal Bar -->
+              <div class="chart-option" data-type="horizontalBar">
+                <i class="fa-solid fa-bars"></i>
+                <span>Horiz. Bar</span>
+              </div>
+              <!-- Line -->
+              <div class="chart-option" data-type="line">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Trend Line</span>
+              </div>
+              <!-- Pie -->
+              <div class="chart-option" data-type="pie">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Pie Dist.</span>
+              </div>
+              <!-- Doughnut -->
+              <div class="chart-option" data-type="doughnut">
+                <i class="fa-regular fa-circle-dot"></i>
+                <span>Doughnut</span>
+              </div>
+              <!-- Area -->
+              <div class="chart-option" data-type="area">
+                <i class="fa-solid fa-chart-area"></i>
+                <span>Area Fill</span>
+              </div>
+              <!-- Radar -->
+              <div class="chart-option" data-type="radar">
+                <i class="fa-solid fa-spider"></i>
+                <span>Radar Scan</span>
+              </div>
+              <!-- Polar -->
+              <div class="chart-option" data-type="polarArea">
+                <i class="fa-solid fa-circle-nodes"></i>
+                <span>Polar Area</span>
+              </div>
+              <!-- Scatter -->
+              <div class="chart-option" data-type="scatter">
+                <i class="fa-solid fa-braille"></i>
+                <span>Scatter Plot</span>
+              </div>
+              <!-- Mixed -->
+              <div class="chart-option" data-type="mixed">
+                <i class="fa-solid fa-chart-gantt"></i>
+                <span>Mixed Combo</span>
+              </div>
+              <!-- Bubble -->
+              <div class="chart-option" data-type="bubble">
+                <i class="fa-solid fa-water"></i>
+                <span>Bubble Chart</span>
+              </div>
+              <!-- Stepped Line -->
+              <div class="chart-option" data-type="steppedLine">
+                <i class="fa-solid fa-stairs"></i>
+                <span>Stepped Line</span>
+              </div>
+              <!-- Stacked Bar -->
+              <div class="chart-option" data-type="stackedBar">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Stacked Bar</span>
+              </div>
+              <!-- Stacked Area -->
+              <div class="chart-option" data-type="stackedArea">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Stacked Area</span>
+              </div>
+              <!-- Histogram -->
+              <div class="chart-option" data-type="histogram">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Histogram</span>
+              </div>
+              <!-- Waterfall -->
+              <div class="chart-option" data-type="waterfall">
+                <i class="fa-solid fa-arrow-down-arrow-up"></i>
+                <span>Waterfall</span>
+              </div>
+              <!-- Box Plot -->
+              <div class="chart-option" data-type="boxPlot">
+                <i class="fa-solid fa-border-all"></i>
+                <span>Box Plot</span>
+              </div>
+              <!-- Ring Chart -->
+              <div class="chart-option" data-type="ring">
+                <i class="fa-solid fa-ring"></i>
+                <span>Ring Chart</span>
+              </div>
+              <!-- Gauge Chart -->
+              <div class="chart-option" data-type="gauge">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>Gauge</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Data Fields -->
+          <div class="col-lg-3 col-md-6 border-end-lg">
+            <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                <span class="badge bg-light text-dark border me-1">2</span> Data Sources
+            </h6>
+            <div class="field-source-container">
+              <p class="small text-muted mb-3"><i class="fa fa-info-circle me-1"></i> Drag these fields to the axes zones.</p>
+              
+              <div class="field-pill" draggable="true" data-field="patient_name">
+                <i class="fa-solid fa-hospital-user"></i> Patient Name
+              </div>
+              <div class="field-pill" draggable="true" data-field="result">
+                <i class="fa-solid fa-heart-circle-check"></i> Diagnosis Result
+              </div>
+              <div class="field-pill" draggable="true" data-field="class">
+                <i class="fa-solid fa-layer-group"></i> Risk Class (ID)
+              </div>
+              <div class="field-pill" draggable="true" data-field="class_type">
+                <i class="fa-solid fa-notes-medical"></i> Condition Type
+              </div>
+              <div class="field-pill" draggable="true" data-field="created_at">
+                <i class="fa-regular fa-calendar-check"></i> Examination Date
+              </div>
+              <div class="field-pill" draggable="true" data-field="file_type">
+                <i class="fa-solid fa-file-waveform"></i> Source File
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Drop Zones -->
+          <div class="col-lg-3 col-md-6 border-end-lg">
+            <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                <span class="badge bg-light text-dark border me-1">3</span> Configuration
+            </h6>
+            <div class="drop-zone-container">
+                <!-- X Axis -->
+                <div>
+                    <div class="drop-zone-label">X-Axis (Category)</div>
+                    <div class="drop-zone" id="xAxisZone" data-zone="x">
+                        <i class="fa-solid fa-arrows-left-right fa-2x text-muted mb-2"></i>
+                        <span class="text-muted small text-center">Drag Field Here</span>
+                    </div>
+                </div>
+                
+                <!-- Y Axis -->
+                <div>
+                    <div class="drop-zone-label">Y-Axis (Metric)</div>
+                    <div class="drop-zone has-content" id="yAxisZone" data-zone="y">
+                        <i class="fa-solid fa-calculator fa-2x text-success mb-2"></i>
+                        <span class="text-dark fw-bold">Record Count</span>
+                        <span class="badge bg-success bg-opacity-10 text-success mt-1">Default (Drag to Change)</span>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <!-- Column 4: Options -->
+          <div class="col-lg-3 col-md-6">
+            <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                <span class="badge bg-light text-dark border me-1">4</span> Fine Tuning
+            </h6>
+            <div class="bg-light p-3 rounded-3 border">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showLegend" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="showLegend">Show Legend</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="showGrid" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="showGrid">Show Grid Lines</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="animateChart" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="animateChart">Enable Animation</label>
+                </div>
+                <hr>
+                <div class="d-flex align-items-start gap-2">
+                    <i class="fa-regular fa-lightbulb text-warning mt-1"></i>
+                    <p class="small text-muted mb-0">
+                        Try visualizing <strong>Diagnosis Result</strong> or <strong>Condition Type</strong> to see patient distribution.
+                    </p>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Result Section -->
+    <div class="med-card shadow-sm">
+        <div class="med-card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0 text-secondary"><i class="fa fa-chart-simple me-2"></i>Analysis Result</h5>
+                <button id="aiAnalyzeBtn" class="btn btn-sm btn-outline-primary rounded-pill px-3" style="display:none;">
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Get AI Clinical Insight
+                </button>
+            </div>
+            
+            <div class="chart-display-area" id="mainChartContainer" style="display:none;">
+                <canvas id="mainChart"></canvas>
+            </div>
+            
+            <div class="chart-display-area d-flex align-items-center justify-content-center" id="chartPlaceholder">
+                <div class="text-center">
+                    <div class="empty-state-icon">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                    <h5 class="text-dark fw-bold">Waiting for Data</h5>
+                    <p class="text-muted">Select a chart type and define your X-Axis to visualize reports.</p>
+                </div>
+            </div>
+            
+            <!-- AI Insight Result -->
+            <div id="aiInsightContainer" class="ai-insight-card" style="display:none;">
+                <div class="ai-insight-header">
+                    <span><i class="fa-solid fa-robot me-2"></i>Gemini Clinical Insight</span>
+                    <span class="ai-badge">AI Generated</span>
+                </div>
+                <div class="ai-insight-body" id="aiInsightText">
+                    <!-- Content will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center py-4 mt-5 text-muted small">
+    <p class="mb-0">&copy; 2025 Hospital Analytics System. Confidential Patient Data.</p>
+  </footer>
+
+  <!-- DATA & SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Injected JSON Data -->
+  <script id="reportData" type="application/json">{{ reports_json | safe }}</script>
+  
+  <script>
+    /**
+     * Hospital Analytics Dashboard Logic
+     */
+     
+    // --- GEMINI API SETUP ---
+    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Injected by environment
+    
+    // Helper to call Gemini
+    async function callGeminiAPI(prompt) {
+        if (!apiKey) {
+            console.error("API Key missing");
+            alert("API Key is missing in the environment.");
+            return null;
+        }
+        
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+            
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text;
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            return null;
+        }
+    }
+
+    // 1. Data Initialization
+    let reportData = [];
+    try {
+      const rawData = document.getElementById('reportData').textContent;
+      reportData = rawData ? JSON.parse(rawData) : [];
+    } catch (err) {
+      console.warn('Backend data not found, switching to demo mode.');
+    }
+
+    // Demo Data Fallback
+    const DEMO_DATA = [
+      { patient_name: 'John Doe', result_label: 'Normal', class_type: 'Normal Sinus Rhythm', created_at: '2025-01-10', upload_filename: 'ecg_001.csv' },
+      { patient_name: 'Jane Smith', result_label: 'Abnormal', class_type: 'Atrial Fibrillation', created_at: '2025-01-11', upload_filename: 'ecg_002.csv' },
+      { patient_name: 'Robert Brown', result_label: 'Abnormal', class_type: 'Myocardial Infarction', created_at: '2025-01-12', upload_filename: 'ecg_003.csv' },
+      { patient_name: 'Emily White', result_label: 'Normal', class_type: 'Normal Sinus Rhythm', created_at: '2025-01-12', upload_filename: 'ecg_004.csv' },
+      { patient_name: 'Michael Green', result_label: 'Abnormal', class_type: 'Atrial Fibrillation', created_at: '2025-01-13', upload_filename: 'ecg_005.csv' },
+      { patient_name: 'Sarah Connor', result_label: 'Normal', class_type: 'Normal Sinus Rhythm', created_at: '2025-01-14', upload_filename: 'ecg_006.csv' },
+      { patient_name: 'Bruce Wayne', result_label: 'Abnormal', class_type: 'Ventricular Tachycardia', created_at: '2025-01-15', upload_filename: 'ecg_007.csv' },
+      { patient_name: 'Clark Kent', result_label: 'Normal', class_type: 'Normal Sinus Rhythm', created_at: '2025-01-16', upload_filename: 'ecg_008.csv' },
+      { patient_name: 'Diana Prince', result_label: 'Normal', class_type: 'Normal Sinus Rhythm', created_at: '2025-01-16', upload_filename: 'ecg_009.csv' },
+    ];
+
+    if (!reportData || reportData.length === 0) {
+        reportData = DEMO_DATA;
+    }
+
+    // 2. Global State
+    let state = {
+        chartType: 'bar',
+        xAxis: null,
+        yAxis: 'count', // Default to count, but can be changed
+        chartInstance: null
+    };
+
+    // 3. Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        initChartSelectors();
+        initDragAndDrop();
+        initControls();
+        initAIFeatures();
+    });
+    
+    // --- AI Features Logic ---
+    function initAIFeatures() {
+        // Natural Language Builder
+        document.getElementById('aiQueryBtn').addEventListener('click', async () => {
+            const query = document.getElementById('aiQueryInput').value;
+            if(!query) return;
+            
+            const btn = document.getElementById('aiQueryBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Thinking...';
+            btn.disabled = true;
+            
+            const fields = ['patient_name', 'result', 'class', 'class_type', 'created_at', 'file_type'];
+            const chartTypes = ['bar', 'horizontalBar', 'line', 'pie', 'doughnut', 'area', 'radar', 'polarArea', 'scatter', 'mixed', 'bubble', 'steppedLine', 'stackedBar', 'stackedArea', 'histogram', 'waterfall', 'boxPlot', 'ring', 'gauge'];
+            
+            const prompt = `
+                User Request: "${query}"
+                Available Fields: ${JSON.stringify(fields)}
+                Available Chart Types: ${JSON.stringify(chartTypes)}
+                
+                Task: Map the user's request to a valid JSON object with 'chartType' and 'xAxis'.
+                If the field name doesn't match exactly, pick the closest one.
+                Example Output: {"chartType": "pie", "xAxis": "result"}
+                Only return the JSON.
+            `;
+            
+            const result = await callGeminiAPI(prompt);
+            
+            if (result) {
+                try {
+                    // Clean the string (remove potential markdown code blocks)
+                    const cleanJson = result.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const config = JSON.parse(cleanJson);
+                    
+                    if (config.chartType && config.xAxis) {
+                        // Update State
+                        state.chartType = config.chartType;
+                        state.xAxis = config.xAxis;
+                        
+                        // Update UI to reflect changes
+                        // 1. Chart Type
+                        document.querySelectorAll('.chart-option').forEach(opt => {
+                            if(opt.getAttribute('data-type') === state.chartType) {
+                                opt.click();
+                            }
+                        });
+                        
+                        // 2. Drop Zone text
+                        const zone = document.getElementById('xAxisZone');
+                        zone.classList.add('has-content');
+                        // Find label for field
+                        const fieldLabel = document.querySelector(`.field-pill[data-field="${state.xAxis}"]`)?.innerText || state.xAxis;
+                        
+                        zone.innerHTML = `
+                            <i class="fa-solid fa-wand-magic-sparkles fa-2x text-primary mb-2"></i>
+                            <span class="text-primary fw-bold">${fieldLabel}</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary mt-1">AI Selected</span>
+                        `;
+                        
+                        // Render
+                        renderChart();
+                    }
+                } catch (e) {
+                    console.error("Failed to parse AI response", e);
+                    alert("I understood, but couldn't configure the chart automatically. Try selecting manually!");
+                }
+            }
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+
+        // Clinical Insight Analysis
+        document.getElementById('aiAnalyzeBtn').addEventListener('click', async () => {
+            const container = document.getElementById('aiInsightContainer');
+            const textBox = document.getElementById('aiInsightText');
+            
+            container.style.display = 'block';
+            textBox.innerHTML = `
+                <div class="loading-shimmer"></div>
+                <div class="loading-shimmer" style="width: 80%"></div>
+                <div class="loading-shimmer" style="width: 60%"></div>
+            `;
+            
+            // Prepare data summary for AI
+            const chartData = processData(state.xAxis, state.yAxis);
+            const summary = {
+                xAxisField: state.xAxis,
+                yAxisField: state.yAxis,
+                chartType: state.chartType,
+                totalRecords: reportData.length,
+                dataDistribution: chartData.labels.map((l, i) => `${l}: ${chartData.data[i]}`).join(', ')
+            };
+            
+            const prompt = `
+                You are a senior medical data analyst. 
+                Analyze this ECG report dataset distribution:
+                ${JSON.stringify(summary)}
+                
+                The data represents: ${state.xAxis}.
+                
+                Provide a professional clinical insight. 
+                1. Summarize the key finding.
+                2. Highlight any abnormal prevalence or concerning trends.
+                3. Suggest what a doctor should focus on based on this distribution.
+                
+                Keep it concise (under 100 words), professional, and use bullet points where appropriate.
+                Do NOT mention JSON or technical data structures. Speak to the doctor.
+            `;
+            
+            const analysis = await callGeminiAPI(prompt);
+            
+            if (analysis) {
+                // Use marked.js if available, else plain text
+                textBox.innerHTML = typeof marked !== 'undefined' ? marked.parse(analysis) : analysis;
+            } else {
+                textBox.innerHTML = "Analysis unavailable at the moment.";
+            }
+        });
+    }
+
+    function initChartSelectors() {
+        document.querySelectorAll('.chart-option').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                // Remove active class from all
+                document.querySelectorAll('.chart-option').forEach(el => el.classList.remove('active'));
+                // Add to clicked
+                e.currentTarget.classList.add('active');
+                state.chartType = e.currentTarget.getAttribute('data-type');
+            });
+        });
+    }
+
+    function initControls() {
+        document.getElementById('generateChartBtn').addEventListener('click', renderChart);
+        
+        // Auto-update if chart exists
+        ['showLegend', 'showGrid', 'animateChart'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                if(state.chartInstance) renderChart();
+            });
+        });
+    }
+
+    // 4. Drag and Drop Logic
+    function initDragAndDrop() {
+        const draggables = document.querySelectorAll('[draggable="true"]');
+        const zones = document.querySelectorAll('.drop-zone');
+
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('field', draggable.getAttribute('data-field'));
+                e.dataTransfer.setData('text', draggable.innerText.trim());
+                draggable.classList.add('opacity-50');
+            });
+
+            draggable.addEventListener('dragend', () => {
+                draggable.classList.remove('opacity-50');
+            });
+        });
+
+        zones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                
+                const field = e.dataTransfer.getData('field');
+                const text = e.dataTransfer.getData('text');
+                const zoneType = zone.getAttribute('data-zone');
+
+                // Update state based on which axis
+                if (zoneType === 'x') {
+                    state.xAxis = field;
+                } else if (zoneType === 'y') {
+                    state.yAxis = field;
+                }
+                
+                // Update UI
+                zone.classList.add('has-content');
+                const iconClass = zoneType === 'x' ? 'fa-check-circle' : 'fa-calculator';
+                const colorClass = zoneType === 'x' ? 'primary' : 'success';
+                
+                zone.innerHTML = `
+                    <i class="fa-solid ${iconClass} fa-2x text-${colorClass} mb-2"></i>
+                    <span class="text-${colorClass} fw-bold">${text}</span>
+                    <span class="badge bg-${colorClass} bg-opacity-10 text-${colorClass} mt-1">Selected Field</span>
+                `;
+            });
+        });
+    }
+
+    // 5. Chart Processing & Rendering
+    function processData(groupByField, valueField = 'count') {
+        const groups = {};
+        
+        reportData.forEach(item => {
+            let key = item[groupByField] || 'Unknown';
+            
+            // Format Dates
+            if(groupByField === 'created_at' && key !== 'Unknown') {
+                key = key.split(' ')[0] || key; // simple date part
+            }
+            
+            // Format File Type
+            if(groupByField === 'file_type' && item.upload_filename) {
+                key = item.upload_filename.split('.').pop().toUpperCase();
+            }
+
+            // Initialize group if not exists
+            if (!groups[key]) {
+                groups[key] = { count: 0, values: [] };
+            }
+            
+            groups[key].count++;
+            
+            // If valueField is specified and not 'count', collect values
+            if (valueField !== 'count' && item[valueField]) {
+                groups[key].values.push(item[valueField]);
+            }
+        });
+
+        // Calculate final values based on valueField
+        const labels = Object.keys(groups);
+        const data = labels.map(label => {
+            if (valueField === 'count') {
+                return groups[label].count;
+            } else {
+                // For numeric fields, calculate average
+                const values = groups[label].values.filter(v => !isNaN(v));
+                if (values.length > 0) {
+                    return values.reduce((a, b) => Number(a) + Number(b), 0) / values.length;
+                }
+                return groups[label].count; // Fallback to count
+            }
+        });
+
+        return { labels, data };
+    }
+
+    function renderChart() {
+        if (!state.xAxis) {
+            alert('Please drag a field to the X-Axis first (or ask AI to do it!).');
+            return;
+        }
+
+        const canvas = document.getElementById('mainChart');
+        const ctx = canvas.getContext('2d');
+        const chartData = processData(state.xAxis, state.yAxis);
+        
+        // UI Switching
+        const placeholder = document.getElementById('chartPlaceholder');
+        placeholder.classList.remove('d-flex'); // Remove Bootstrap flex class to allow hiding
+        placeholder.style.display = 'none';
+
+        document.getElementById('mainChartContainer').style.display = 'block';
+        document.getElementById('aiAnalyzeBtn').style.display = 'inline-block'; // Show AI button
+        document.getElementById('aiInsightContainer').style.display = 'none'; // Reset Insight
+
+        if (state.chartInstance) {
+            state.chartInstance.destroy();
+        }
+
+        // Configuration Options
+        const showLegend = document.getElementById('showLegend').checked;
+        const showGrid = document.getElementById('showGrid').checked;
+        const animate = document.getElementById('animateChart').checked;
+
+        // Colors (Extended Hospital Palette)
+        const palette = [
+            'rgba(0, 180, 216, 0.7)',  // Blue
+            'rgba(255, 107, 107, 0.7)', // Red/Coral
+            'rgba(32, 201, 151, 0.7)',  // Teal
+            'rgba(252, 196, 25, 0.7)',  // Yellow
+            'rgba(118, 75, 162, 0.7)',  // Purple
+            'rgba(72, 202, 228, 0.7)',  // Light Cyan
+            'rgba(255, 159, 64, 0.7)',  // Orange
+            'rgba(255, 99, 132, 0.7)',  // Pink
+            'rgba(75, 192, 192, 0.7)',  // Green
+            'rgba(153, 102, 255, 0.7)', // Deep Purple
+        ];
+        
+        const borders = palette.map(c => c.replace('0.7', '1'));
+
+        // Chart Config Setup
+        let configType = state.chartType;
+        let indexAxis = 'x';
+        let datasets = [{
+            label: state.yAxis === 'count' ? 'Total Reports' : state.yAxis.replace('_', ' ').toUpperCase(),
+            data: chartData.data,
+            backgroundColor: palette,
+            borderColor: borders,
+            borderWidth: 1,
+            fill: true
+        }];
+
+        // Special Type Handling
+        if (state.chartType === 'horizontalBar') {
+            configType = 'bar';
+            indexAxis = 'y';
+        } else if (state.chartType === 'area') {
+            configType = 'line';
+            datasets[0].fill = true;
+            datasets[0].tension = 0.4;
+        } else if (state.chartType === 'steppedLine') {
+            configType = 'line';
+            datasets[0].stepped = true;
+            datasets[0].fill = false;
+            datasets[0].tension = 0;
+        } else if (state.chartType === 'stackedArea') {
+            configType = 'line';
+            datasets[0].fill = true;
+            datasets[0].tension = 0.4;
+            datasets[0].borderWidth = 2;
+        } else if (state.chartType === 'stackedBar') {
+            configType = 'bar';
+        } else if (state.chartType === 'scatter') {
+             // Fake scatter for demo compatibility
+             datasets[0].data = chartData.data.map((v, i) => ({x: i, y: v}));
+             datasets[0].pointRadius = 6;
+        } else if (state.chartType === 'bubble') {
+             // Bubble chart with random sizes
+             datasets[0].data = chartData.data.map((v, i) => ({x: i, y: v, r: Math.sqrt(v) * 3}));
+             datasets[0].pointRadius = 8;
+        } else if (state.chartType === 'histogram') {
+            configType = 'bar';
+            datasets[0].barPercentage = 1.0;
+            datasets[0].categoryPercentage = 1.0;
+            datasets[0].backgroundColor = 'rgba(0, 180, 216, 0.7)';
+            datasets[0].borderColor = 'rgba(0, 180, 216, 1)';
+            datasets[0].borderWidth = 1;
+            // Sort data for histogram display
+            const sortedIndices = chartData.data.map((v, i) => ({ value: v, index: i }))
+                .sort((a, b) => b.value - a.value)
+                .map(item => item.index);
+            datasets[0].data = sortedIndices.map(i => chartData.data[i]);
+            chartData.labels = sortedIndices.map(i => chartData.labels[i]);
+        } else if (state.chartType === 'waterfall') {
+            // Simulate waterfall with custom colors
+            configType = 'bar';
+            datasets[0].backgroundColor = chartData.data.map((v, i) => i % 2 === 0 ? 'rgba(32, 201, 151, 0.7)' : 'rgba(255, 107, 107, 0.7)');
+        } else if (state.chartType === 'boxPlot') {
+            configType = 'bar';
+            datasets[0].backgroundColor = 'rgba(118, 75, 162, 0.5)';
+            datasets[0].borderColor = 'rgba(118, 75, 162, 1)';
+            datasets[0].borderWidth = 2;
+        } else if (state.chartType === 'ring') {
+            configType = 'doughnut';
+            datasets[0].borderColor = '#fff';
+            datasets[0].borderWidth = 3;
+        } else if (state.chartType === 'gauge') {
+            configType = 'doughnut';
+            datasets[0].data = [chartData.data.reduce((a, b) => a + b, 0), 100 - chartData.data.reduce((a, b) => a + b, 0)];
+            datasets[0].backgroundColor = ['rgba(32, 201, 151, 0.8)', 'rgba(200, 200, 200, 0.3)'];
+            datasets[0].borderWidth = 0;
+        } else if (state.chartType === 'mixed') {
+             configType = 'bar';
+             datasets.push({
+                 type: 'line',
+                 label: 'Trend',
+                 data: chartData.data,
+                 borderColor: '#2c3e50',
+                 borderWidth: 2,
+                 borderDash: [5, 5],
+                 tension: 0.4,
+                 fill: false
+             });
+        }
+
+        state.chartInstance = new Chart(ctx, {
+            type: configType,
+            data: {
+                labels: chartData.labels,
+                datasets: datasets
+            },
+            options: {
+                indexAxis: indexAxis,
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: animate ? { duration: 1000, easing: 'easeOutQuart' } : false,
+                plugins: {
+                    legend: { display: showLegend, position: 'bottom' },
+                    title: {
+                        display: true,
+                        text: `${state.xAxis.replace('_', ' ').toUpperCase()} vs ${state.yAxis === 'count' ? 'COUNT' : state.yAxis.replace('_', ' ').toUpperCase()}`,
+                        font: { size: 16, family: "'Poppins', sans-serif" },
+                        padding: 20
+                    }
+                },
+                scales: ['pie','doughnut','radar','polarArea'].includes(configType) ? {} : {
+                    y: {
+                        beginAtZero: true,
+                        grid: { display: showGrid, color: '#f1f3f5' }
+                    },
+                    x: {
+                        grid: { display: showGrid, color: '#f1f3f5' }
+                    }
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>

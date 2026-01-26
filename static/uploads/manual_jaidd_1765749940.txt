@@ -1,0 +1,3 @@
+Manual ECG report placeholder
+This file was created to restore the missing download link.
+If you want real manual reports to be saved automatically, restart the Flask app and re-run the manual submission (the app now writes full manual files to `static/uploads`).

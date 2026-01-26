@@ -1,0 +1,18 @@
+Parameter,Value
+Patient Name,Madhusudan
+Status,Ischemic changes (Coronary Artery)
+Risk Level,HIGH
+Age,0
+Gender,Male
+Height,0
+Weight,0
+QRS (ms),67.3
+QT (ms),373.3
+T (ms),134.6
+PR (ms),174.0
+P (ms),102.7
+Heart Rate (bpm),79.4
+QRS Deviation %,81.67
+Confidence Score,0.14
+Paper Speed (mm/s),25.0
+Amplitude Gain (mm/mV),10.0

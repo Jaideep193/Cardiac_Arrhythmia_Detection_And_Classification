@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Animated ECG — Interactive</title>
+
+  <script src="https://cdn.plot.ly/plotly-2.28.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      padding: 18px;
+      border-radius: 12px;
+      max-width: 1100px;
+      margin: auto;
+    }
+    h1 { margin: 0 0 10px 0; }
+    #plot { width:100%; height:360px; }
+    .controls { margin-top:10px; display:flex; gap:10px; }
+    .btn { padding:8px 15px; border:none; border-radius:8px; cursor:pointer; }
+    .btn-play { background:#16a34a; color:white; }
+    .btn-pause { background:#2563eb; color:white; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Animated ECG — Interactive</h1>
+  <div id="plot"></div>
+
+  <div class="controls">
+    <button id="playBtn" class="btn btn-play">Play</button>
+    <button id="pauseBtn" class="btn btn-pause">Pause</button>
+  </div>
+</div>
+
+<!-- --------------------------
+     JINJA DATA SAFE BLOCK
+     (VS CODE WILL NOT PARSE)
+   -------------------------- -->
+<script id="ecg-data" type="application/json">
+{{ {
+    "qrs_ms": qrs_ms,
+    "qt_ms": qt_ms,
+    "t_ms": t_ms,
+    "pr_ms": pr_ms,
+    "p_ms": p_ms
+} | tojson }}
+</script>
+
+<!-- SAFE JAVASCRIPT (reads JSON from DOM) -->
+<script>
+const ecgParams = JSON.parse(
+  document.getElementById("ecg-data").textContent
+);
+
+const qrs_ms = ecgParams.qrs_ms;
+const qt_ms  = ecgParams.qt_ms;
+const t_ms   = ecgParams.t_ms;
+const pr_ms  = ecgParams.pr_ms;
+const p_ms   = ecgParams.p_ms;
+
+// Convert ms → seconds
+const qrs_s = qrs_ms/1000;
+const qt_s  = qt_ms/1000;
+const t_s   = t_ms/1000;
+const pr_s  = pr_ms/1000;
+const p_s   = p_ms/1000;
+
+// Generate single ECG beat waveform
+function makeSingleBeat(duration_s, samples=1200) {
+  const x = [];
+  const y = [];
+
+  const P_start = 0.08;
+  const P_end = P_start + p_s;
+  const P_center = (P_start + P_end) / 2;
+
+  const Q_start = P_end + pr_s * 0.25;
+  const R_peak = Q_start + qrs_s * 0.35;
+  const S_end = Q_start + qrs_s;
+
+  const T_center = S_end + (qt_s - qrs_s) / 2;
+  const T_end = S_end + t_s;
+
+  for (let i=0;i<samples;i++){
+    let t = i/samples*duration_s;
+    let v = 0;
+
+    // P wave
+    v += 0.15*Math.sin(Math.PI*(t-P_center)/p_s) *
+         Math.exp(-((t-P_center)**2)/(2*(p_s**2)));
+
+    // QRS
+    let w = qrs_s/25;
+    v -= 0.2 * Math.exp(-((t-Q_start)**2)/(2*(w*3)**2));
+    v += 1.2 * Math.exp(-((t-R_peak)**2)/(2*(w)**2));
+    v -= 0.35 * Math.exp(-((t-S_end )**2)/(2*(w*1.7)**2));
+
+    // T wave
+    v += 0.28 * Math.sin(Math.PI*(t-T_center)/t_s) *
+         Math.exp(-((t-T_center)**2)/(2*(t_s**2)));
+
+    x.push(t);
+    y.push(v);
+  }
+
+  const maxv = Math.max(...y.map(Math.abs));
+  return { x, y: y.map(v => v/maxv) };
+}
+
+// Build long waveform
+const beat_duration = Math.max(0.7, qt_s + 0.4);
+const beat = makeSingleBeat(beat_duration);
+
+let longX = [], longY = [];
+for (let i=0;i<8;i++){
+  beat.x.forEach((t,idx)=>{
+    longX.push(t + i*beat_duration);
+    longY.push(beat.y[idx]);
+  });
+}
+
+// Create animation frames
+const frames = [];
+const windowWidth = 2.5;
+for (let f=0; f<80; f++){
+  const shift = f*(beat_duration/80);
+  const x = [], y = [];
+  for (let i=0;i<longX.length;i++){
+    const t = longX[i] - shift;
+    if (t>=0 && t<=windowWidth){
+      x.push(t);
+      y.push(longY[i]);
+    }
+  }
+  frames.push({name:'f'+f, data:[{x,y}]});
+}
+
+// Initial plot
+Plotly.newPlot("plot",
+  [{x:frames[0].data[0].x, y:frames[0].data[0].y, mode:"lines", line:{width:2}}],
+  {
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(10,20,40,0.5)",
+    xaxis:{range:[0,windowWidth], color:"white"},
+    yaxis:{range:[-1.3,1.3], color:"white"},
+  }
+).then(()=>{
+  Plotly.addFrames("plot", frames);
+
+  const anim = {
+    frame:{duration:50, redraw:true},
+    transition:{duration:0},
+    fromcurrent:true,
+    mode:"immediate"
+  };
+
+  // Buttons
+  document.getElementById("playBtn").onclick = ()=>{
+    Plotly.animate("plot", frames.map(f=>f.name), anim);
+  };
+
+  document.getElementById("pauseBtn").onclick = ()=>{
+    Plotly.animate("plot", null, {frame:{duration:0},mode:"immediate"});
+  };
+
+  Plotly.animate("plot", frames.map(f=>f.name), anim);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,18 @@
+Parameter,Value
+Patient Name,Rohit
+Status,Normal
+Risk Level,No Risk
+Age,0
+Gender,Male
+Height,0
+Weight,0
+QRS (ms),68.3
+QT (ms),375.9
+T (ms),136.7
+PR (ms),172.5
+P (ms),101.7
+Heart Rate (bpm),75.8
+QRS Deviation %,81.40
+Confidence Score,0.4
+Paper Speed (mm/s),25.0
+Amplitude Gain (mm/mV),10.0

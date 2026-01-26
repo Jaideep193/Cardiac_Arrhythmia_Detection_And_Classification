@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patients Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- FullCalendar -->
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.js'></script>
+  <!-- Quill Rich Text Editor -->
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <style>
+    body { background-color: #f0f9ff; }
+    .page-header { background: linear-gradient(135deg, #0284c7, #0ea5e9); color: white; padding: 1.2rem; border-radius: 1rem; }
+    .card { border-radius: 1rem; }
+    .tab-pane { padding-top: 1rem; }
+    .form-label { font-weight: 600; }
+    .fc .fc-toolbar-title { font-size: 1rem; }
+    .quill-container { background: white; border-radius: 0.75rem; }
+    .ql-editor { color: #0f172a; }
+    .ql-editor p { color: inherit; }
+    .notes-entry { color: #0f172a; background: #f8fafc; }
+    .notes-entry * { color: #0f172a !important; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="page-header d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h3 class="mb-0"><i class="fa fa-user-injured me-2"></i>Patients Management</h3>
+        <small>Welcome, {{ doctor_name or 'Doctor' }}</small>
+      </div>
+      <div>
+        <a href="{{ url_for('doctor_reports') }}" class="btn btn-light"><i class="fa fa-arrow-left me-1"></i>Back to Dashboard</a>
+      </div>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Select Patient</label>
+          <select class="form-select" id="patientSelect" onchange="loadPatientProfile()">
+            {% for p in patients %}
+              <option value="{{ p[0] }}" {% if selected_patient_id and selected_patient_id == p[0] %}selected{% endif %}>{{ p[1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100" onclick="loadPatientProfile()"><i class="fa fa-user me-1"></i>Load Profile</button>
+        </div>
+        <div class="col-md-5 text-end">
+          <span class="badge bg-primary">Profiles</span>
+          <span class="badge bg-success">Appointments</span>
+          <span class="badge bg-warning text-dark">Prescriptions</span>
+          <span class="badge bg-secondary">Notes</span>
+          <div id="profileStatus" class="small mt-2 text-muted"></div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="nav nav-tabs" id="tabs" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile">Profile</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#appointments">Appointments</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#prescriptions">Prescriptions</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#notes">Notes</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- Profile Tab -->
+      <div class="tab-pane fade show active" id="profile">
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <label class="form-label">Medical History</label>
+            <textarea id="medical_history" class="form-control" rows="6" placeholder="Chronic conditions, surgeries, etc."></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Medications</label>
+            <textarea id="medications" class="form-control" rows="6" placeholder="Drug name, dose, schedule"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Comorbidities</label>
+            <textarea id="comorbidities" class="form-control" rows="5" placeholder="Diabetes, hypertension, CAD, etc."></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Allergies</label>
+            <textarea id="allergies" class="form-control" rows="5" placeholder="Penicillin, nuts, latex, etc."></textarea>
+          </div>
+          <div class="col-12 text-end">
+            <button class="btn btn-success" onclick="saveProfile()"><i class="fa fa-save me-1"></i>Save Profile</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appointments Tab -->
+      <div class="tab-pane fade" id="appointments">
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <div class="card p-3">
+              <h6>Schedule Appointment</h6>
+              <div class="mb-2"><label class="form-label">Title</label><input id="appt_title" class="form-control" placeholder="Follow-up / Consultation"></div>
+              <div class="mb-2"><label class="form-label">Start</label><input id="appt_start" type="datetime-local" class="form-control"></div>
+              <div class="mb-2"><label class="form-label">End</label><input id="appt_end" type="datetime-local" class="form-control"></div>
+              <div class="mb-2"><label class="form-label">Notes</label><textarea id="appt_notes" class="form-control" rows="3"></textarea></div>
+              <div class="mb-2"><label class="form-label">Status</label>
+                <select id="appt_status" class="form-select">
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <button class="btn btn-primary w-100" onclick="createAppointment()"><i class="fa fa-calendar-plus me-1"></i>Create</button>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <div id='calendar' class="card p-2 mb-3"></div>
+            <div class="card p-3">
+              <h6>Appointment History</h6>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead><tr><th>Title</th><th>Start</th><th>End</th><th>Status</th></tr></thead>
+                  <tbody id="appt_table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prescriptions Tab -->
+      <div class="tab-pane fade" id="prescriptions">
+        <div class="row g-3 mt-1">
+          <div class="col-md-5">
+            <div class="card p-3">
+              <h6>New Prescription</h6>
+              <div class="mb-2"><label class="form-label">Medication</label><input id="rx_med" class="form-control" placeholder="e.g., Metoprolol"></div>
+              <div class="mb-2"><label class="form-label">Dosage</label><input id="rx_dose" class="form-control" placeholder="e.g., 50 mg"></div>
+              <div class="mb-2"><label class="form-label">Frequency</label><input id="rx_freq" class="form-control" placeholder="e.g., Twice daily"></div>
+              <div class="mb-2"><label class="form-label">Start Date</label><input id="rx_start" type="date" class="form-control"></div>
+              <div class="mb-2"><label class="form-label">End Date</label><input id="rx_end" type="date" class="form-control"></div>
+              <div class="mb-2"><label class="form-label">Instructions</label><textarea id="rx_instr" class="form-control" rows="3"></textarea></div>
+              <button class="btn btn-warning w-100" onclick="createPrescription()"><i class="fa fa-prescription-bottle-medical me-1"></i>Save</button>
+            </div>
+          </div>
+          <div class="col-md-7">
+            <div class="card p-3">
+              <h6>Prescription History</h6>
+              <table class="table table-sm">
+                <thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Dates</th></tr></thead>
+                <tbody id="rx_table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Tab -->
+      <div class="tab-pane fade" id="notes">
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <div class="card p-3">
+              <h6>Clinical Note</h6>
+              <div id="editor" class="quill-container" style="height: 220px"></div>
+              <button class="btn btn-secondary mt-2" onclick="saveNote()"><i class="fa fa-note-sticky me-1"></i>Save Note</button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card p-3">
+              <h6>Notes History</h6>
+              <div id="notes_list" class="vstack gap-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let quill;
+    document.addEventListener('DOMContentLoaded', () => {
+      quill = new Quill('#editor', { theme: 'snow' });
+      initCalendar();
+      // Auto-load profile on page ready
+      if (document.getElementById('patientSelect').options.length > 0) {
+        loadPatientProfile();
+      } else {
+        document.getElementById('profileStatus').innerText = 'No patients found. Create a report to add patients.';
+      }
+    });
+
+    function currentPatientId() {
+      return document.getElementById('patientSelect').value;
+    }
+
+    async function loadPatientProfile() {
+      const pid = currentPatientId();
+      if (!pid) {
+        alert('Please select a patient');
+        return;
+      }
+      try {
+        // Show loading status before fetching
+        document.getElementById('profileStatus').innerText = 'Loading profile...';
+        const res = await fetch(`/api/patient_profile/${pid}`);
+        if (res.status === 401) {
+          document.getElementById('profileStatus').innerText = 'Session expired. Please log in again.';
+          alert('Session expired. Please log in again.');
+          return;
+        }
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Failed to load profile (${res.status}): ${txt}`);
+        }
+        const data = await res.json();
+        document.getElementById('medical_history').value = data.medical_history || '';
+        document.getElementById('medications').value = data.medications || '';
+        document.getElementById('comorbidities').value = data.comorbidities || '';
+        document.getElementById('allergies').value = data.allergies || '';
+        document.getElementById('profileStatus').innerText = data.updated_at ? (`Last updated: ${data.updated_at}`) : 'No profile saved yet';
+        loadPrescriptions();
+        loadNotes();
+        loadCalendarEvents();
+        // fetch and render appointment history table
+        const events = await (await fetch(`/api/appointments?patient_id=${pid}`)).json();
+        renderAppointmentHistory(events);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('profileStatus').innerText = 'Error loading profile.';
+        alert('Error loading profile. Please try again.');
+      }
+    }
+
+    async function saveProfile() {
+      const pid = currentPatientId();
+      const payload = new URLSearchParams({
+        patient_id: pid,
+        medical_history: document.getElementById('medical_history').value,
+        medications: document.getElementById('medications').value,
+        comorbidities: document.getElementById('comorbidities').value,
+        allergies: document.getElementById('allergies').value,
+      });
+      const res = await fetch('/patients/profile', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
+      const data = await res.json();
+      if (data.ok) alert('Profile saved');
+    }
+
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 580,
+        events: [],
+      });
+      calendar.render();
+      // Save reference
+      window._calendar = calendar;
+      loadCalendarEvents();
+    }
+
+    async function loadCalendarEvents() {
+      if (!window._calendar) return;
+      const pid = currentPatientId();
+      const url = pid ? `/api/appointments?patient_id=${pid}` : '/api/appointments';
+      const res = await fetch(url);
+      const events = await res.json();
+      window._calendar.removeAllEvents();
+      window._calendar.addEventSource(events);
+      renderAppointmentHistory(events);
+    }
+
+    function renderAppointmentHistory(events) {
+      const tbody = document.getElementById('appt_table');
+      if (!Array.isArray(events) || events.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No appointments yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = events.map(e => `
+        <tr>
+          <td>${e.title || 'Appointment'}</td>
+          <td>${e.start || ''}</td>
+          <td>${e.end || ''}</td>
+          <td><span class="badge bg-light text-dark">${e.status || ''}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    async function createAppointment() {
+      const pid = currentPatientId();
+      const payload = new URLSearchParams({
+        patient_id: pid,
+        title: document.getElementById('appt_title').value,
+        start_datetime: document.getElementById('appt_start').value,
+        end_datetime: document.getElementById('appt_end').value,
+        notes: document.getElementById('appt_notes').value,
+        status: document.getElementById('appt_status').value,
+      });
+      const res = await fetch('/appointments', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
+      const data = await res.json();
+      if (data.ok) {
+        loadCalendarEvents();
+        // also refresh history right after creation
+        const pidVal = currentPatientId();
+        if (pidVal) {
+          const events = await (await fetch(`/api/appointments?patient_id=${pidVal}`)).json();
+          renderAppointmentHistory(events);
+        }
+        alert('Appointment created');
+      }
+    }
+
+    async function loadPrescriptions() {
+      const pid = currentPatientId();
+      const res = await fetch(`/api/prescriptions?patient_id=${pid}`);
+      const items = await res.json();
+      const tbody = document.getElementById('rx_table');
+      tbody.innerHTML = items.map(i => `
+        <tr>
+          <td>${i.medication_name}</td>
+          <td>${i.dosage}</td>
+          <td>${i.frequency}</td>
+          <td>${i.start_date || ''} - ${i.end_date || ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function createPrescription() {
+      const pid = currentPatientId();
+      const payload = new URLSearchParams({
+        patient_id: pid,
+        medication_name: document.getElementById('rx_med').value,
+        dosage: document.getElementById('rx_dose').value,
+        frequency: document.getElementById('rx_freq').value,
+        start_date: document.getElementById('rx_start').value,
+        end_date: document.getElementById('rx_end').value,
+        instructions: document.getElementById('rx_instr').value,
+      });
+      const res = await fetch('/prescriptions', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
+      const data = await res.json();
+      if (data.ok) {
+        loadPrescriptions();
+        alert('Prescription saved');
+      }
+    }
+
+    async function loadNotes() {
+      const pid = currentPatientId();
+      const res = await fetch(`/api/notes?patient_id=${pid}`);
+      const items = await res.json();
+      const list = document.getElementById('notes_list');
+      list.innerHTML = items.map(n => `
+        <div class="border rounded p-2 bg-white notes-entry">
+          <div class="small text-muted">${n.created_at}</div>
+          <div>${n.content_html}</div>
+        </div>
+      `).join('');
+    }
+
+    async function saveNote() {
+      const pid = currentPatientId();
+      const contentHtml = quill.root.innerHTML;
+      const payload = new URLSearchParams({ patient_id: pid, content_html: contentHtml });
+      const res = await fetch('/notes', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: payload });
+      const data = await res.json();
+      if (data.ok) {
+        loadNotes();
+        quill.setContents([]);
+        alert('Note saved');
+      }
+    }
+  </script>
+</body>
+</html>

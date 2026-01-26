@@ -1,0 +1,1337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MediPortal - Doctor Dashboard</title>
+  
+  <!-- Google Fonts: Poppins (Modern) & Roboto (Data) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Keep original CSS link as fallback, but override below -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/doctor_dashboard.css') }}">
+
+  <style>
+    :root {
+      /* Enhanced Vibrant Medical Palette */
+      --med-primary: #0284c7;       /* Deep Hospital Blue */
+      --med-primary-light: #e0f2fe;
+      --med-primary-gradient: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+      
+      --med-teal: #0d9488;          /* Scrub Green/Teal */
+      --med-teal-light: #ccfbf1;
+      --med-teal-gradient: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+      
+      --med-danger: #e11d48;        /* Emergency Red */
+      --med-danger-light: #ffe4e6;
+      --med-danger-gradient: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+      
+      --med-warning: #f59e0b;       /* Amber */
+      --med-warning-light: #fef3c7;
+      --med-warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+      
+      --med-purple: #8b5cf6;        /* AI Purple */
+      --med-purple-light: #f5f3ff;
+      --med-purple-gradient: linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
+      
+      --med-cyan: #06b6d4;
+      --med-cyan-gradient: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+      
+      --med-dark: #0f172a;
+      --med-gray: #64748b;
+      --bg-body: #f0f9ff;           /* Soft Sky Blue Background */
+      
+      --card-radius: 20px;
+      --card-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+      --hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      --glow-shadow: 0 0 20px rgba(2, 132, 199, 0.3);
+      
+      /* AI / Gemini Palette */
+      --ai-sparkle: #8b5cf6;
+      --ai-bg: #f5f3ff;
+      --ai-gradient: linear-gradient(135deg, #8b5cf6, #d946ef);
+    }
+
+    body {
+      background-color: var(--bg-body);
+      font-family: 'Poppins', sans-serif;
+      color: var(--med-dark);
+      padding-bottom: 40px;
+    }
+
+    /* --- Navbar / Header Area --- */
+    .header-section {
+      background: linear-gradient(120deg, #0284c7 0%, #0ea5e9 50%, #06b6d4 100%);
+      padding: 1.5rem 0 3.5rem 0;
+      margin-bottom: -2rem;
+      border-radius: 0 0 40px 40px;
+      color: white;
+      box-shadow: 0 8px 32px rgba(2, 132, 199, 0.35);
+      position: relative;
+      z-index: 100;
+      overflow: visible;
+    }
+
+    .header-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+    }
+
+    .header-section::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: 10%;
+      width: 400px;
+      height: 400px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+    }
+
+    .brand-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+    }
+
+    .brand-icon {
+      background: rgba(255,255,255,0.2);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      backdrop-filter: blur(5px);
+    }
+
+    /* --- Floating Stat Cards --- */
+    .stats-container {
+      position: relative;
+      z-index: 2;
+      margin-top: -20px;
+    }
+
+    .stat-card {
+      background: white;
+      border: none;
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      height: 100%;
+      border-left: 5px solid transparent;
+      border-top: 3px solid transparent;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: var(--hover-shadow);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      right: -30px;
+      bottom: -30px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      opacity: 0.08;
+      z-index: 0;
+    }
+
+    .stat-card-blue { border-left-color: var(--med-primary); border-top-color: #0284c7; }
+    .stat-card-blue::before { background: var(--med-primary-gradient); }
+    .stat-card-blue::after { background: var(--med-primary); }
+    .stat-card-blue .icon-box { background: linear-gradient(135deg, #e0f2fe, #bfdbfe); color: var(--med-primary); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.2); }
+    .stat-card-blue .stat-value { background: linear-gradient(135deg, #0284c7, #0ea5e9); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .stat-card-teal { border-left-color: var(--med-teal); border-top-color: #0d9488; }
+    .stat-card-teal::before { background: var(--med-teal-gradient); }
+    .stat-card-teal::after { background: var(--med-teal); }
+    .stat-card-teal .icon-box { background: linear-gradient(135deg, #ccfbf1, #a7f3d0); color: var(--med-teal); box-shadow: 0 4px 15px rgba(13, 148, 136, 0.2); }
+    .stat-card-teal .stat-value { background: linear-gradient(135deg, #0d9488, #14b8a6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .stat-card-red { border-left-color: var(--med-danger); border-top-color: #e11d48; }
+    .stat-card-red::before { background: var(--med-danger-gradient); }
+    .stat-card-red::after { background: var(--med-danger); }
+    .stat-card-red .icon-box { background: linear-gradient(135deg, #ffe4e6, #fbcfe8); color: var(--med-danger); box-shadow: 0 4px 15px rgba(225, 29, 72, 0.2); }
+    .stat-card-red .stat-value { background: linear-gradient(135deg, #e11d48, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .stat-card-gold { border-left-color: var(--med-warning); border-top-color: #f59e0b; }
+    .stat-card-gold::before { background: var(--med-warning-gradient); }
+    .stat-card-gold::after { background: var(--med-warning); }
+    .stat-card-gold .icon-box { background: linear-gradient(135deg, #fef3c7, #fde68a); color: var(--med-warning); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2); }
+    .stat-card-gold .stat-value { background: linear-gradient(135deg, #f59e0b, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .icon-box {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .stat-label {
+      color: var(--med-gray);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* --- Filters Bar --- */
+    .filters-card {
+      background: linear-gradient(135deg, white 0%, #f5f3ff 100%);
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid #e0e7ff;
+    }
+
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-wrapper i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--med-gray);
+    }
+
+    .search-input {
+      border-radius: 50px;
+      padding-left: 40px;
+      border: 2px solid #e0e7ff;
+      background-color: #fafbff;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+
+    .search-input:focus {
+      background-color: white;
+      border-color: var(--ai-sparkle);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+
+    .search-input::placeholder {
+      color: #cbd5e1;
+    }
+
+    /* --- Table Styling --- */
+    .table-card {
+      background: white;
+      border-radius: var(--card-radius);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      border: none;
+    }
+
+    .table thead th {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      border-bottom: 3px solid #0284c7;
+      padding: 1.5rem 1rem;
+    }
+
+    .table tbody tr {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .table tbody td {
+      vertical-align: middle;
+      padding: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    /* Row States */
+    .row-normal { 
+      border-left: 4px solid transparent; 
+      transition: all 0.3s ease;
+      background: linear-gradient(90deg, rgba(13, 148, 136, 0.02) 0%, transparent 100%);
+    }
+    .row-normal:hover { 
+      background: linear-gradient(90deg, rgba(13, 148, 136, 0.1) 0%, transparent 100%) !important;
+      border-left-color: var(--med-teal);
+      box-shadow: inset 4px 0 0 var(--med-teal);
+      transform: scale(1.01);
+    }
+
+    .row-abnormal { 
+      background: linear-gradient(90deg, rgba(225, 29, 72, 0.05) 0%, transparent 100%);
+      border-left: 4px solid var(--med-danger-light); 
+    }
+    .row-abnormal:hover { 
+      background: linear-gradient(90deg, rgba(225, 29, 72, 0.12) 0%, transparent 100%) !important;
+      border-left-color: var(--med-danger);
+      box-shadow: inset 4px 0 0 var(--med-danger);
+      transform: scale(1.01);
+    }
+
+    /* Custom Badges */
+    .badge-pill {
+      padding: 0.6em 1.2em;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s;
+    }
+
+    .badge-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .badge-normal {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .badge-abnormal {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #7f1d1d;
+      border: 1px solid #fca5a5;
+    }
+
+    .patient-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e0f2fe, #bfdbfe);
+      color: var(--med-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      margin-right: 12px;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+    }
+
+    /* Action Buttons */
+    .btn-action {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .btn-action:hover {
+      transform: scale(1.15) translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-action-view { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #3b82f6; }
+    .btn-action-view:hover { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+
+    .btn-action-dl { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #ef4444; }
+    .btn-action-dl:hover { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+    
+    .btn-action-csv { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #22c55e; }
+    .btn-action-csv:hover { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
+
+    /* New AI Button */
+    .btn-action-ai { 
+      background: var(--ai-bg); 
+      color: var(--ai-sparkle);
+      border: 2px solid var(--ai-sparkle);
+      font-weight: 600;
+    }
+    .btn-action-ai:hover { 
+      background: var(--ai-gradient);
+      color: white;
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+    }
+    .btn-action-ai i { font-size: 1.1rem; }
+
+    /* Class Badge */
+    .class-badge {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .class-badge:hover {
+      transform: scale(1.08) translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    }
+
+    /* Pagination */
+    .pagination .page-link {
+      border: none;
+      color: var(--med-gray);
+      border-radius: 10px;
+      margin: 0 4px;
+      background: transparent;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .pagination .page-link:hover {
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    /* Customize Panel */
+    .customize-panel {
+      position: fixed;
+      right: -350px;
+      top: 0;
+      width: 320px;
+      height: 100%;
+      background: linear-gradient(180deg, white 0%, #f5f3ff 100%);
+      box-shadow: -8px 0 40px rgba(139, 92, 246, 0.2);
+      z-index: 1050;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .customize-panel.open { right: 0; }
+    
+    .customize-header {
+      background: var(--ai-gradient);
+      color: white;
+      padding: 1.5rem;
+    }
+
+    .customize-item {
+      padding: 12px;
+      margin-bottom: 8px;
+      background: white;
+      border: 2px solid #e0e7ff;
+      border-radius: 10px;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    
+    .customize-item:hover {
+      border-color: var(--ai-sparkle);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    }
+    
+    .customize-item:active { cursor: grabbing; border-color: var(--ai-sparkle); background: #f5f3ff; }
+
+    /* --- Chatbot Widget --- */
+    .chat-widget-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      background: var(--ai-gradient);
+      color: white;
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
+      border: 3px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      z-index: 1060;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .chat-widget-btn:hover {
+      transform: scale(1.15) rotate(-5deg);
+      box-shadow: 0 12px 32px rgba(139, 92, 246, 0.6);
+    }
+
+    .chat-window {
+      position: fixed;
+      bottom: 110px;
+      right: 30px;
+      width: 380px;
+      height: 540px;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      z-index: 1060;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform-origin: bottom right;
+      transform: scale(0);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .chat-window.open {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .chat-header {
+      background: var(--ai-gradient);
+      padding: 18px 20px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background: #fafbff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-input-area {
+      padding: 14px;
+      background: white;
+      border-top: 2px solid #e0e7ff;
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      animation: slideIn 0.3s ease;
+    }
+
+    .chat-bubble.user {
+      background: var(--ai-gradient);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble.bot {
+      background: white;
+      border: 1.5px solid #e0e7ff;
+      color: #334155;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .typing-indicator span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: #cbd5e1;
+      border-radius: 50%;
+      animation: typing 1s infinite;
+      margin: 0 2px;
+    }
+    
+    @keyframes typing {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    
+    /* Markdown simple styles in modal */
+    .ai-response-content h3 { font-size: 1.1rem; font-weight: 700; color: #4b5563; margin-top: 1rem; }
+    .ai-response-content ul { padding-left: 1.2rem; }
+    .ai-response-content strong { color: #1e293b; }
+
+    /* Dropdown menu z-index fix */
+    .dropdown-menu {
+      z-index: 1050 !important;
+    }
+    .btn-group {
+      position: relative;
+      z-index: 1000;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- 1. Header Section -->
+  <div class="header-section">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <!-- Brand -->
+        <div class="brand-logo">
+          <div class="brand-icon">
+            <i class="fa-solid fa-heart-pulse text-white"></i>
+          </div>
+          <div>
+            <div>Doctor Dashboard</div>
+            <div class="fw-normal opacity-75" style="font-size: 0.9rem;">Welcome back, <strong class="text-white">{{ doctor_name or 'Doctor' }}</strong></div>
+          </div>
+        </div>
+
+        <!-- Top Actions -->
+        <div class="d-flex gap-2">
+           <button class="btn btn-light btn-sm rounded-pill px-3 fw-medium text-primary" id="toggleCustomizeBtn">
+             <i class="fa fa-sliders me-1"></i> Layout
+           </button>
+           <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{{ url_for('visualization_page') }}">
+             <i class="fa fa-chart-pie me-1"></i> Analytics
+           </a>
+           <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="/patients">
+             <i class="fa fa-user-injured me-1"></i> Patients
+           </a>
+           <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{{ url_for('ecg_visualization') }}">
+             <i class="fa fa-wave-square me-1"></i> ECG Viz
+           </a>
+           <!-- Admin/Team Controls -->
+           <div class="btn-group">
+             <button type="button" class="btn btn-outline-light btn-sm rounded-pill dropdown-toggle px-3" data-bs-toggle="dropdown" aria-expanded="false">
+               <i class="fa fa-cog me-1"></i> Admin
+             </button>
+             <ul class="dropdown-menu dropdown-menu-end">
+               <li><a class="dropdown-item" href="{{ url_for('admin_assignments') }}"><i class="fa fa-users me-1"></i>Assignments</a></li>
+               <li><a class="dropdown-item" href="{{ url_for('audit_logs') }}"><i class="fa fa-clipboard-list me-1"></i>Audit Logs</a></li>
+               <li><a class="dropdown-item" href="{{ url_for('admin_templates') }}"><i class="fa fa-file-invoice me-1"></i>Templates</a></li>
+             </ul>
+           </div>
+           <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{{ url_for('logout') }}">
+             <i class="fa fa-sign-out-alt me-1"></i> Logout
+           </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container pb-5">
+    
+    <!-- Dashboard Layout Container -->
+    <div id="dashboardLayout">
+      
+      <!-- 2. Summary Stats (Floating Cards) -->
+      <div class="dashboard-component stats-container" data-component="stats">
+        <div class="row g-4 mb-4">
+          <!-- Total -->
+          <div class="col-md-3">
+            <div class="stat-card stat-card-blue">
+              <div class="d-flex flex-column h-100">
+                <div class="d-flex justify-content-between">
+                  <div class="icon-box"><i class="fa fa-folder-open"></i></div>
+                  <i class="fa fa-wave-square text-muted opacity-25 fa-2x"></i>
+                </div>
+                <div class="mt-auto">
+                  <div class="stat-value" id="statTotal">{{ total or 0 }}</div>
+                  <div class="stat-label">Total Records</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Today -->
+          <div class="col-md-3">
+            <div class="stat-card stat-card-teal">
+              <div class="d-flex flex-column h-100">
+                <div class="d-flex justify-content-between">
+                   <div class="icon-box"><i class="fa fa-calendar-day"></i></div>
+                   <i class="fa fa-clock text-muted opacity-25 fa-2x"></i>
+                </div>
+                <div class="mt-auto">
+                  <div class="stat-value" id="statToday">0</div>
+                  <div class="stat-label">Today's Reports</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Normal -->
+          <div class="col-md-3">
+            <div class="stat-card stat-card-gold">
+               <div class="d-flex flex-column h-100">
+                <div class="d-flex justify-content-between">
+                  <div class="icon-box"><i class="fa fa-heart"></i></div>
+                  <i class="fa fa-check-circle text-muted opacity-25 fa-2x"></i>
+                </div>
+                <div class="mt-auto">
+                  <div class="stat-value" id="statNormal">0</div>
+                  <div class="stat-label">Normal ECG</div>
+                </div>
+               </div>
+            </div>
+          </div>
+
+          <!-- Abnormal -->
+          <div class="col-md-3">
+            <div class="stat-card stat-card-red">
+               <div class="d-flex flex-column h-100">
+                <div class="d-flex justify-content-between">
+                  <div class="icon-box"><i class="fa fa-triangle-exclamation"></i></div>
+                  <i class="fa fa-heart-crack text-muted opacity-25 fa-2x"></i>
+                </div>
+                <div class="mt-auto">
+                  <div class="stat-value" id="statAbnormal">0</div>
+                  <div class="stat-label">Attention Needed</div>
+                </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Search & Filters -->
+      <div class="dashboard-component" data-component="filters">
+        <div class="filters-card">
+          <div class="row align-items-center g-3">
+            <div class="col-md-5">
+              <div class="search-wrapper">
+                <i class="fa fa-search"></i>
+                <input id="searchBox" class="form-control search-input" placeholder="Search patient, file ID, or diagnosis..." oninput="filterTable()">
+              </div>
+            </div>
+            <div class="col-md-7 text-end">
+               <form class="d-inline-flex gap-2 flex-wrap justify-content-end" method="get">
+                 <select name="range" class="form-select form-select-sm border-0 bg-light rounded-pill px-3" style="width:auto">
+                   <option value="7">Last 7 days</option>
+                   <option value="30">Last 30 days</option>
+                   <option value="0">All Time</option>
+                 </select>
+                 <select name="result_type" id="resultTypeFilter" class="form-select form-select-sm border-0 bg-light rounded-pill px-3" style="width:auto" onchange="applyClientFilter()">
+                   <option value="all" {% if result_type == 'all' %}selected{% endif %}>All Results</option>
+                   <option value="normal" {% if result_type == 'normal' %}selected{% endif %}>Normal</option>
+                   <option value="abnormal" {% if result_type == 'abnormal' %}selected{% endif %}>Abnormal</option>
+                 </select>
+                 <select name="per_page" class="form-select form-select-sm border-0 bg-light rounded-pill px-3" style="width:auto">
+                   <option value="10">10 / page</option>
+                   <option value="20" selected>20 / page</option>
+                   <option value="50">50 / page</option>
+                 </select>
+                 <button class="btn btn-primary btn-sm rounded-pill px-4 fw-medium shadow-sm">Apply</button>
+                 <button type="button" class="btn btn-light btn-sm rounded-circle shadow-sm" onclick="clearSearch()" title="Clear"><i class="fa fa-times"></i></button>
+               </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="alert alert-danger shadow-sm rounded-4 border-0 mb-4 d-flex align-items-center">
+            <i class="fa fa-exclamation-circle me-2 fa-lg"></i> {{ error }}
+        </div>
+      {% endif %}
+
+      {% if reports %}
+      <!-- 4. Reports Table -->
+      <div class="dashboard-component" data-component="table">
+        <div class="table-card">
+          <div class="table-responsive">
+            <table id="reportsTable" class="table mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-4">ID</th>
+                  <th>Patient Info</th>
+                  <th>Source File</th>
+                  <th>ECG Preview</th>
+                  <th>Date & Time</th>
+                  <th>Diagnosis</th>
+                  <th>Classification</th>
+                  <th class="text-end pe-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in reports %}
+                <tr data-result="{{ r.result | lower }}" class="{% set __lbl = (r.result|string).lower() %}{% if 'normal' in __lbl or __lbl in ['1','normal'] %}row-normal{% else %}row-abnormal{% endif %}">
+                  <td class="ps-4 text-muted fw-bold">#{{ r.id }}</td>
+                  
+                  <!-- Patient -->
+                  <td class="patient-name-cell">
+                    <div class="d-flex align-items-center">
+                      <div class="patient-avatar">
+                        <i class="fa fa-user"></i>
+                      </div>
+                      <div class="fw-semibold text-dark">{{ r.patient_name or 'Unknown Patient' }}</div>
+                    </div>
+                  </td>
+
+                  <!-- File -->
+                  <td>
+                    {% if r.upload_filename %}
+                      <div class="text-truncate" style="max-width: 150px;">
+                        <a href="{{ r.upload_url }}" target="_blank" class="text-decoration-none text-secondary small">
+                          <i class="fa fa-file-medical me-1"></i> {{ r.upload_filename }}
+                        </a>
+                      </div>
+                    {% else %}<span class="text-muted">-</span>{% endif %}
+                  </td>
+
+                  <!-- Preview -->
+                  <td>
+                    {% if r.preview_url %}
+                      <a href="#" class="preview-link d-inline-block rounded border bg-light p-1" role="button" tabindex="0" data-src="{{ r.preview_url }}" data-type="{{ 'pdf' if r.preview_url.endswith('.pdf') else 'img' }}">
+                          <img src="{{ r.preview_url }}" class="thumb" alt="ECG" style="height:35px; width:auto; border-radius:4px;">
+                      </a>
+                    {% else %}
+                      <span class="badge bg-light text-muted fw-normal">No Preview</span>
+                    {% endif %}
+                  </td>
+                  
+                  <!-- Date -->
+                  <td class="text-muted small">
+                      <i class="far fa-clock me-1"></i> {{ r.created_at }}
+                  </td>
+
+                  <!-- Result Badge -->
+                  <td class="diagnosis-cell">
+                    {% set lbl = (r.result|string).lower() %}
+                    {% if 'normal' in lbl or lbl in ['1', 'normal'] %}
+                      <span class="badge-pill badge-normal"><i class="fa fa-check-circle"></i> Normal</span>
+                    {% elif 'af' in lbl or 'abnormal' in lbl or lbl not in ['1'] %}
+                      <span class="badge-pill badge-abnormal"><i class="fa fa-circle-exclamation"></i> Abnormal</span>
+                    {% else %}
+                      <span class="badge bg-secondary rounded-pill">{{ r.result }}</span>
+                    {% endif %}
+                  </td>
+
+                  <!-- Class Badge -->
+                  <td class="classification-cell">
+                    {%- set class_idx = (r.get('result') if r.get('result') is not none else (r.get('arrhythmia_class') or r.get('class_no') or r.get('result_class') or r.get('class'))) -%}
+                    {%- if class_idx is not none and class_idx != '' -%}
+                      {%- set num = class_idx -%}
+                      {%- if class_labels is defined -%}
+                        {%- set label = class_labels.get(num) if class_labels.get(num) is not none else class_labels.get(num|string) -%}
+                      {%- else -%}
+                        {%- set label = None -%}
+                      {%- endif -%}
+                      <button type="button" class="class-badge" data-bs-toggle="tooltip" title="{{ label|e if label else ('Class ' ~ num) }}">
+                        Class {{ num }}
+                      </button>
+                    {%- else -%}
+                      <span class="text-muted small">-</span>
+                    {%- endif %}
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="text-end pe-4">
+                    <!-- New AI Button -->
+                    <button class="btn-action btn-action-ai me-1" 
+                            onclick="generateSummary(this)" 
+                            data-patient="{{ r.patient_name or 'Unknown Patient' }}"
+                            data-diagnosis="{{ r.result }}"
+                            data-class="{{ class_idx }}"
+                            title="Generate AI Clinical Summary ✨">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </button>
+
+                    {% if r.patient_id %}
+                      <a class="btn-action btn-action-view me-1" href="/patients?patient_id={{ r.patient_id }}" title="Load Profile">
+                        <i class="fa fa-user-circle me-1"></i> 
+                      </a>
+                    {% endif %}
+                    
+                    
+                    
+                    {% if r.pdf_url %}
+                      <a class="btn-action btn-action-view me-1" href="{{ r.pdf_url }}" target="_blank" title="View Report"><i class="fa fa-eye"></i></a>
+                      <a class="btn-action btn-action-dl me-1" href="{{ r.pdf_url }}" download title="Download PDF"><i class="fa fa-file-pdf"></i></a>
+                    {% endif %}
+                    {% if r.csv_url %}
+                      <a class="btn-action btn-action-csv" href="{{ r.csv_url }}" download title="Download CSV"><i class="fa fa-file-csv"></i></a>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Footer / Pagination -->
+          <div class="d-flex align-items-center justify-content-between p-3 bg-light border-top">
+             <div class="small text-muted ps-2">
+                 Showing <strong>{{ reports|length }}</strong> of <strong>{{ total }}</strong> records
+             </div>
+             <nav>
+               <ul class="pagination pagination-sm mb-0">
+                 {% if page > 1 %}
+                   <li class="page-item"><a class="page-link" href="?page={{ page-1 }}&per_page={{ per_page }}&days={{ request.args.get('days','') }}">Prev</a></li>
+                 {% endif %}
+                 <li class="page-item"><span class="page-link text-dark">Page {{ page }}</span></li>
+                 {% if page < total_pages %}
+                   <li class="page-item"><a class="page-link" href="?page={{ page+1 }}&per_page={{ per_page }}&days={{ request.args.get('days','') }}">Next</a></li>
+                 {% endif %}
+               </ul>
+             </nav>
+          </div>
+        </div>
+      </div>
+
+      {% else %}
+      <!-- Empty State -->
+      <div class="text-center py-5">
+        <div class="mb-4 text-muted opacity-25">
+           <i class="fa-solid fa-file-medical-alt fa-5x"></i>
+        </div>
+        <h4 class="text-dark fw-bold">No Records Found</h4>
+        <p class="text-muted">There are no reports matching your current filters.</p>
+        <a href="{{ url_for('doctor_reports') }}" class="btn btn-primary rounded-pill px-4 mt-2 shadow-sm">Reset Filters</a>
+      </div>
+      {% endif %}
+    </div>
+
+  </div> <!-- End Container -->
+
+  <!-- Chatbot Trigger Button -->
+  <button class="chat-widget-btn" id="chatToggleBtn" title="Ask Medical Assistant ✨">
+    <i class="fa-solid fa-robot"></i>
+  </button>
+
+  <!-- Chatbot Window -->
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="d-flex align-items-center">
+        <i class="fa-solid fa-sparkles me-2"></i>
+        <span class="fw-bold">MediBot Assistant</span>
+      </div>
+      <button class="btn btn-sm text-white" id="closeChatBtn"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-bubble bot">
+        Hello! I'm your AI medical assistant. I can help with general guidelines, arrhythmia definitions, or quick summaries. How can I assist you today?
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" class="form-control border-0 bg-light" placeholder="Ask a question..." onkeypress="handleChatKey(event)">
+      <button class="btn btn-primary rounded-circle" onclick="sendMessage()"><i class="fa fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- AI Summary Modal -->
+  <div class="modal fade" id="aiSummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+        <div class="modal-header text-white" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+          <h5 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>AI Clinical Summary</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 bg-light">
+          <div id="aiSummaryContent" class="ai-response-content text-dark">
+             <div class="text-center py-4">
+               <div class="spinner-border text-primary" role="status"></div>
+               <p class="mt-2 text-muted">Analyzing patient data with Gemini...</p>
+             </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 bg-light">
+          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary rounded-pill" onclick="copySummary()"><i class="fa fa-copy me-1"></i> Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 24px;">
+
+  <!-- Peer Review Comments Modal -->
+  <div class="modal fade" id="commentsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fa fa-comments me-2"></i>Peer Review Comments</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4" id="commentsContent">
+          <div class="mb-4">
+            <label class="form-label fw-bold">Add Comment</label>
+            <textarea id="newComment" class="form-control" rows="3" placeholder="Share your review or recommendation..."></textarea>
+            <button class="btn btn-primary btn-sm mt-2" onclick="addComment()"><i class="fa fa-plus me-1"></i>Post Comment</button>
+          </div>
+          <hr>
+          <div id="commentsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+        <div class="modal-header text-white border-0" style="background: var(--med-primary);">
+          <h5 class="modal-title fs-6"><i class="fa fa-eye me-2 opacity-75"></i>Document Preview</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center p-0 bg-dark position-relative" style="min-height:500px;">
+          <!-- Loading placeholder could go here -->
+          <img id="previewImg" src="" alt="preview" style="max-width:100%; max-height:80vh; display:none; margin: auto;" />
+          <iframe id="previewPdf" src="" style="width:100%; height:80vh; border:none; display:none;"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customize Panel -->
+  <div class="customize-panel" id="customizePanel">
+    <div class="customize-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold text-uppercase ls-1"><i class="fa fa-palette me-2"></i>Customize View</h6>
+      <button class="btn btn-sm text-white opacity-50 hover-opacity-100" id="closeCustomizeBtn"><i class="fa fa-times fa-lg"></i></button>
+    </div>
+    
+    <div class="customize-body p-4 flex-grow-1 overflow-auto">
+      <div class="text-muted small mb-3">Drag items to reorganize your dashboard.</div>
+      
+      <div class="mb-4">
+        <label class="text-uppercase text-xs fw-bold text-muted mb-2">Sections</label>
+        <div class="customize-list" id="customizeList">
+          <div class="customize-item shadow-sm" draggable="true" data-component="stats">
+            <i class="fa fa-chart-bar text-primary me-3"></i> Statistics Cards
+          </div>
+          <div class="customize-item shadow-sm" draggable="true" data-component="filters">
+            <i class="fa fa-filter text-success me-3"></i> Search & Filters
+          </div>
+          <div class="customize-item shadow-sm" draggable="true" data-component="table">
+            <i class="fa fa-table text-info me-3"></i> Records Table
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="text-uppercase text-xs fw-bold text-muted mb-2">Toggle Columns</label>
+        <div class="d-flex flex-column gap-2" id="customizeColumns">
+           <label class="form-check p-2 bg-light rounded">
+             <input type="checkbox" class="form-check-input ms-1 me-2" value="patient" checked> Patient Info
+           </label>
+           <label class="form-check p-2 bg-light rounded">
+             <input type="checkbox" class="form-check-input ms-1 me-2" value="file" checked> File Name
+           </label>
+           <label class="form-check p-2 bg-light rounded">
+             <input type="checkbox" class="form-check-input ms-1 me-2" value="preview" checked> Preview
+           </label>
+           <label class="form-check p-2 bg-light rounded">
+             <input type="checkbox" class="form-check-input ms-1 me-2" value="created" checked> Date
+           </label>
+           <label class="form-check p-2 bg-light rounded">
+             <input type="checkbox" class="form-check-input ms-1 me-2" value="result" checked> Result
+           </label>
+           <label class="form-check p-2 bg-light rounded">
+             <input type="checkbox" class="form-check-input ms-1 me-2" value="class" checked> Classification
+           </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="p-3 border-top bg-light">
+      <button class="btn btn-outline-secondary w-100 rounded-pill" id="resetLayoutBtn">
+        <i class="fa fa-rotate-left me-2"></i> Reset Default
+      </button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/doctor_dashboard.js') }}"></script>
+  
+  <!-- GEMINI API INTEGRATION SCRIPT -->
+  <script>
+    // --- GEMINI CONFIGURATION ---
+    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // API Key will be injected by the environment
+    
+    // Helper to call Gemini API
+    async function callGeminiAPI(promptText) {
+      // REMOVED: Validation logic to allow environment injection
+      
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      
+      const payload = {
+        contents: [{ parts: [{ text: promptText }] }]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+           const errText = await response.text();
+           throw new Error(`API Error: ${response.status} - ${errText}`);
+        }
+        
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+      } catch (error) {
+        console.error("Gemini API Error:", error);
+        return "I'm having trouble connecting to the AI service right now. Please try again in a moment.";
+      }
+    }
+
+    // --- FEATURE 1: AI CLINICAL SUMMARY ---
+    async function generateSummary(btn) {
+      const patientName = btn.dataset.patient;
+      const diagnosis = btn.dataset.diagnosis;
+      const classification = btn.dataset.class;
+      
+      // Open Modal
+      const modal = new bootstrap.Modal(document.getElementById('aiSummaryModal'));
+      modal.show();
+      
+      const contentDiv = document.getElementById('aiSummaryContent');
+      contentDiv.innerHTML = `
+         <div class="text-center py-4">
+           <div class="spinner-border text-primary" role="status"></div>
+           <p class="mt-2 text-muted">Analyzing patient data with Gemini...</p>
+         </div>
+      `;
+
+      // Construct Prompt
+      const prompt = `
+        Act as a professional cardiologist. 
+        Generate a concise medical report summary for a patient named "${patientName}".
+        The automated ECG analysis result is: "${diagnosis}" (Class: ${classification || 'N/A'}).
+        
+        Structure the response with these markdown headers:
+        1. **Clinical Summary**: A brief explanation of the diagnosis.
+        2. **Key Considerations**: Potential causes or risk factors associated with this arrhythmia.
+        3. **Recommended Next Steps**: 3-4 bullet points for further diagnosis (e.g., Holter monitor, echo) or immediate interventions.
+        
+        Keep the tone professional, objective, and supportive.
+      `;
+
+      // Call API
+      const result = await callGeminiAPI(prompt);
+      
+      // Simple Markdown Parsing for display
+      const formattedResult = result
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+        .replace(/\n/g, '<br>') // Newlines
+        .replace(/# (.*?)(<br>|$)/g, '<h3>$1</h3>') // Headers
+        .replace(/\* (.*?)(<br>|$)/g, '<li>$1</li>'); // Lists
+
+      contentDiv.innerHTML = formattedResult;
+    }
+
+    function copySummary() {
+      const content = document.getElementById('aiSummaryContent').innerText;
+      navigator.clipboard.writeText(content);
+      // Optional: Show toast or feedback
+      const btn = document.querySelector('#aiSummaryModal .btn-primary');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+      setTimeout(() => btn.innerHTML = originalText, 2000);
+    }
+
+    // --- FEATURE 2: MEDIBOT ASSISTANT ---
+    const chatBtn = document.getElementById('chatToggleBtn');
+    const chatWindow = document.getElementById('chatWindow');
+    const closeChatBtn = document.getElementById('closeChatBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+
+    chatBtn.addEventListener('click', () => {
+      chatWindow.classList.add('open');
+      chatBtn.style.display = 'none';
+      if(chatMessages.children.length === 1) { // Only welcome message
+         // Focus input
+         setTimeout(() => chatInput.focus(), 300);
+      }
+    });
+
+    closeChatBtn.addEventListener('click', () => {
+      chatWindow.classList.remove('open');
+      setTimeout(() => chatBtn.style.display = 'flex', 300);
+    });
+
+    function handleChatKey(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      // Add User Message
+      appendMessage(text, 'user');
+      chatInput.value = '';
+
+      // Add Loading Indicator
+      const loadingId = 'loading-' + Date.now();
+      const loadingHtml = `<div class="chat-bubble bot typing-indicator" id="${loadingId}"><span></span><span></span><span></span></div>`;
+      chatMessages.insertAdjacentHTML('beforeend', loadingHtml);
+      scrollToBottom();
+
+      // System Prompt context
+      const systemContext = "You are MediBot, a helpful AI assistant for a doctor's dashboard. You answer medical questions briefly and professionally. You are helpful with definitions of arrhythmias, medication guidelines, and general cardiology queries.";
+      const fullPrompt = `${systemContext}\n\nUser Question: ${text}`;
+
+      // Call API
+      const reply = await callGeminiAPI(fullPrompt);
+
+      // Remove loading and add Bot Message
+      document.getElementById(loadingId).remove();
+      appendMessage(reply, 'bot');
+    }
+
+    function appendMessage(text, sender) {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${sender}`;
+      // Basic formatting
+      bubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+      chatMessages.appendChild(bubble);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // --- Peer Review Comments ---
+    let currentReportId = null;
+    async function viewComments(reportId) {
+      currentReportId = reportId;
+      const modal = new bootstrap.Modal(document.getElementById('commentsModal'));
+      modal.show();
+      
+      // Show loading state
+      const list = document.getElementById('commentsList');
+      list.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"></div><p class="text-muted mt-2">Loading comments...</p></div>';
+      
+      await loadComments();
+    }
+
+    async function loadComments() {
+      try {
+        const res = await fetch(`/api/report/${currentReportId}/comments`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        }
+        const comments = await res.json();
+        const list = document.getElementById('commentsList');
+        
+        if (comments.error) {
+          list.innerHTML = '<div class="alert alert-danger">Error: ' + comments.error + '</div>';
+          return;
+        }
+        
+        if (!Array.isArray(comments) || comments.length === 0) {
+          list.innerHTML = '<p class="text-muted">No comments yet. Be the first to review!</p>';
+          return;
+        }
+        
+        list.innerHTML = comments.map(c => `
+          <div class="border-bottom pb-3 mb-3">
+            <div class="d-flex justify-content-between">
+              <strong>${c.doctor_name || 'Doctor'}</strong>
+              <small class="text-muted">${c.created_at}</small>
+            </div>
+            <p class="mb-0 mt-2">${c.comment_text}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading comments:', err);
+        const list = document.getElementById('commentsList');
+        list.innerHTML = '<div class="alert alert-warning">Failed to load comments: ' + err.message + '</div>';
+      }
+    }
+
+    async function addComment() {
+      const comment_text = document.getElementById('newComment').value.trim();
+      if (!comment_text) {
+        alert('Please enter a comment');
+        return;
+      }
+      
+      try {
+        const payload = new URLSearchParams({ comment_text });
+        const res = await fetch(`/api/report/${currentReportId}/comments`, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
+          body: payload 
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        }
+        
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('newComment').value = '';
+          await loadComments();
+        } else {
+          alert('Error adding comment: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error('Error adding comment:', err);
+        alert('Failed to add comment: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

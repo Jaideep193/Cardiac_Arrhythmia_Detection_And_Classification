@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="og:title" content="Detection And Classification Of Cardiac Arrhythmia ">
+  <meta name="author" content="Venkata Sreeram">
+  <meta name="og:image" content="static/logo1.png">
+  <meta name="Keywords" content="Flask, Machine Learning, Deep Learning, Artificial Intelligence, AI, ML,DL, Web Development">
+  <meta name="description" content="A Machine Learning and Deep Learning based webapp for Multiple Disease Prediction.">
+  <title>Detection And Classification Of Cardiac Arrhythmia</title>
+
+  <link rel="icon" href="{{ url_for('static', filename = 'logo1.png') }}" type="image/icon type">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+  <style>
+    /* ------------------ GLOBAL LIGHT THEME ------------------ */
+    body {
+      background: linear-gradient(
+        135deg,
+        #e0faff 0%,
+        #d4f2ff 30%,
+        #dffcff 60%,
+        #e8ffff 100%
+      );
+      background-attachment: fixed;
+      font-family: 'Poppins', sans-serif;
+      padding-top: 80px;
+      color: #004050;
+      overflow-x: hidden;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ------------------ NAVBAR (Light with soft glow) ------------------ */
+    .navbar {
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 15px rgba(0,180,250,0.4);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    .navbar a {
+      color: #004466 !important;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      transition: 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #0099ff !important;
+      text-shadow: 0 0 8px #00c8ff;
+    }
+
+    /* ------------------ CARD (White-Glass Medical) ------------------ */
+    .card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(0,160,200,0.3);
+      box-shadow: 0 0 20px rgba(0,180,200,0.25);
+      animation: fadeIn 1s ease-in-out;
+      transition: 0.3s ease-in-out;
+      color: #003a40;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(0,170,200,0.45);
+    }
+
+    /* ------------------ HEADINGS ------------------ */
+    h1 {
+      color: #006b7a;
+      text-shadow: 0 0 10px #8ff7ff;
+      font-weight: 700;
+    }
+
+    h3 {
+      color: #00a86b !important;
+      text-shadow: 0 0 8px #aaffcf;
+    }
+
+    /* ------------------ LABELS ------------------ */
+    label {
+      color: #007d90;
+      font-weight: 600;
+    }
+
+    /* ------------------ INPUTS WITH RAINBOW GLOW (KEPT) ------------------ */
+    input.form-control, select.form-control {
+      background: rgba(255,255,255,0.7) !important;
+      color: #003f49 !important;
+      border-radius: 12px !important;
+      border: 3px solid transparent !important;
+      padding: 10px;
+      backdrop-filter: blur(4px);
+      animation: glowShift 4s linear infinite;
+      transition: 0.3s;
+    }
+
+    @keyframes glowShift {
+      0% { border-color: #00eaff; box-shadow: 0 0 6px #00eaff; }
+      25% { border-color: #00ff84; box-shadow: 0 0 6px #00ff84; }
+      50% { border-color: #ff00ea; box-shadow: 0 0 6px #ff00ea; }
+      75% { border-color: #ff8c00; box-shadow: 0 0 6px #ff8c00; }
+      100% { border-color: #00eaff; box-shadow: 0 0 6px #00eaff; }
+    }
+
+    input.form-control:focus, select.form-control:focus {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px #00caff !important;
+    }
+
+    /* ------------------ BUTTON ------------------ */
+    .btn-info {
+      background: linear-gradient(90deg, #00d9ff, #00aaff, #00d9ff);
+      background-size: 300% 100%;
+      animation: gradientMove 4s linear infinite;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 0 12px rgba(0,170,255,0.4);
+      transition: 0.3s;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0%; }
+      100% { background-position: 300%; }
+    }
+
+    .btn-info:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 30px rgba(0,180,255,0.7);
+    }
+
+    /* ------------------ ECG IMAGE ------------------ */
+    .ecg-img {
+      border: 2px solid #00c8ff;
+      box-shadow: 0 0 20px #00eaff;
+      border-radius: 18px;
+      transition: 0.3s;
+    }
+
+    .ecg-img:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 35px #00eaff;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-sm navbar-dark fixed-top">
+    <a href="{{ url_for('home') }}">Detection And Classification Of Cardiac Arrhythmia</a>
+
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item active"><a class="nav-link" href="{{ url_for('fetalPage') }}">Detection And Classification Of Cardiac Arrhythmia</a></li>
+        <li class="nav-item active"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+<main>
+<div class="container-fluid">
+  <div class="row mt-5">
+    <div class="col-md-2"></div>
+
+    <div class="col-md-8">
+      <center>
+        <img class="rounded-circle" src="https://cdn-icons-png.flaticon.com/512/3359/3359081.png" width="80" height="80">
+      </center>
+
+      <center><h1>Detection And Classification Of Cardiac Arrhythmia</h1></center>
+      <center>
+        <h3>Choose Input Method</h3>
+        <div class="mt-2">
+          <a href="{{ url_for('upload_csv') }}" class="btn btn-outline-success btn-sm">Upload CSV</a>
+          <span class="mx-2 text-muted">or</span>
+          <span class="badge badge-info">Manual Entry Below</span>
+          <div class="mt-3">
+            <a href="{{ url_for('upload_ecg_image') }}" class="btn btn-primary btn-sm" style="background: linear-gradient(90deg,#00e0ff,#00c853); border: none; color: #002;">Analyze ECG Image</a>
+          </div>
+        </div>
+      </center>
+
+      <div class="card card-body mt-3">
+
+        <!-- FULL ORIGINAL FORM (unchanged) -->
+        <form class="form-horizontal" action="{{ url_for('predictPage') }}" method="POST">
+            <div class="row">
+
+                <div class="col-md-3">
+                    <label><b>Name</b></label>
+                    <input class="form-control" type="text" name="name" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label><b>Age</b></label>
+                    <input class="form-control" type="number" name="Age" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label><b>Email</b></label>
+                    <input class="form-control" type="text" name="email" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label><b>History of Arrhythmia</b></label>
+                    <select name="his" class="form-control">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 mt-3">
+                    <label><b>Gender</b></label>
+                    <select name="Gender" class="form-control">
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+
+                <div class="col-md-6">
+                    <label><b>Height</b></label>
+                    <input class="form-control" type="number" name="Height" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label><b>Weight</b></label>
+                    <input class="form-control" type="number" name="Weight" required>
+                </div>
+
+            </div>
+
+            <div class="row mt-3">
+
+                <div class="col-md-4">
+                    <label><b>QRS Interval</b></label>
+                    <input class="form-control" type="number" name="qrs" required value="{{qrs}}">
+                </div>
+
+                <div class="col-md-4">
+                    <label><b>QT Interval</b></label>
+                    <input class="form-control" type="number" name="q_t" required value="{{q_t}}">
+                </div>
+
+                <div class="col-md-4">
+                    <label><b>T Interval</b></label>
+                    <input class="form-control" type="number" name="t" required value="{{t}}">
+                </div>
+
+            </div>
+
+            <div class="row mt-3">
+
+                <div class="col-md-4">
+                    <label><b>PR Interval</b></label>
+                    <input class="form-control" type="number" name="p_r" required>
+                </div>
+
+                <div class="col-md-4">
+                    <label><b>P Interval</b></label>
+                    <input class="form-control" type="number" name="p" required>
+                </div>
+
+                <div class="col-md-4">
+                    <label><b>Heart Rate</b></label>
+                    <input class="form-control" type="number" name="heart_rate" required value="{{heart_rate}}">
+                </div>
+
+            </div>
+
+            <input type="submit" class="btn btn-info btn-block mt-4" value="Predict">
+        </form>
+
+        {% if ecg_path %}
+        <div class="text-center mt-4">
+          <h3 style="color:#0088aa;">Generated ECG Signal</h3>
+          <img src="{{ url_for('static', filename='ecg_signal.png') }}"
+               class="img-fluid ecg-img">
+        </div>
+        {% endif %}
+        
+
+      </div>
+    </div>
+
+    <div class="col-md-2"></div>
+  </div>
+</div>
+</main>
+
+</body>
+</html>

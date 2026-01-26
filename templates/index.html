@@ -1,0 +1,467 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <title>Detection And Classification Of Cardiac Arrhythmia</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="icon" href="{{ url_for('static', filename='logo1.png') }}" type="image/icon type">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <style>
+    /* ===== Background ===== */
+    body {
+      background-image: url("https://blog.huawei.com/admin/asset/v1/pro/view/a1d296b741c2462c80c708daad67f0dc.gif");
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
+      font-family: 'Segoe UI', sans-serif;
+      color: white; /* Ensure text is visible on dark bg */
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: -1;
+    }
+
+    /* ===== Navbar ===== */
+    nav.navbar {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ===== Form Card & AI Card ===== */
+    #form1, #form2, #ai-tool-card {
+      display: none;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 35px 50px;
+      width: 70%;
+      margin: auto;
+      border-radius: 15px;
+      border: 2px solid rgba(0, 255, 170, 0.75);
+
+      /* Glow + tilt */
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 22px rgba(0, 255, 170, 0.35);
+      transform-style: preserve-3d;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      color: #333; /* Text color inside cards */
+    }
+
+    #form1.active, #form2.active, #ai-tool-card.active {
+      display: block;
+    }
+
+    /* Cursor-follow glow layer */
+    .glow-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: radial-gradient(
+        circle at var(--x) var(--y),
+        rgba(0, 255, 170, 0.45),
+        rgba(0, 255, 170, 0.0) 60%
+      );
+      transition: background 0.1s ease-out;
+    }
+
+    /* ===== Sliding Animations ===== */
+    .slide-in-left {
+      animation: slideInLeft 0.45s ease-out forwards;
+    }
+
+    .slide-in-right {
+      animation: slideInRight 0.45s ease-out forwards;
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ===== Input Glow ===== */
+    input.form-control, textarea.form-control {
+      border: 2px solid #ccc;
+      transition: 0.3s;
+    }
+    input.form-control:focus, textarea.form-control:focus {
+      border-color: #1aff8c;
+      box-shadow: 0 0 10px #1aff8c;
+    }
+
+    /* ===== Neon Buttons ===== */
+    button {
+      background: #1aff8c;
+      border: none;
+      padding: 10px;
+      border-radius: 30px;
+      width: 100%;
+      font-size: 16px;
+      font-weight: 600;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0ddf6c;
+      box-shadow: 0 0 15px #1aff8c;
+      color: white;
+    }
+
+    .container { padding-top: 40px; }
+
+    /* ===== AI Chat Widget ===== */
+    .chat-widget-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      background: #1aff8c;
+      box-shadow: 0 0 20px rgba(0, 255, 170, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1000;
+      transition: transform 0.3s;
+      border: 2px solid white;
+    }
+
+    .chat-widget-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .chat-window {
+      position: fixed;
+      bottom: 110px;
+      right: 30px;
+      width: 320px;
+      height: 450px;
+      background: rgba(20, 20, 20, 0.95);
+      border: 2px solid #1aff8c;
+      border-radius: 15px;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: #1aff8c;
+      padding: 15px;
+      color: #000;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+    .chat-footer {
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+    }
+
+    .chat-bubble {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 85%;
+    }
+    .bot-msg { background: rgba(255, 255, 255, 0.1); align-self: flex-start; }
+    .user-msg { background: #1aff8c; color: #000; align-self: flex-end; margin-left: auto; }
+
+    /* AI Loading Indicator */
+    .typing-indicator span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: #fff;
+      border-radius: 50%;
+      animation: typing 1s infinite;
+      margin: 0 2px;
+    }
+    @keyframes typing {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top">
+  <a href="{{ url_for('home') }}" class="navbar-brand">Detection And Classification Of Cardiac Arrhythmia</a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarNav">
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item active"><a href="{{ url_for('home') }}" class="nav-link">Home</a></li>
+      <li class="nav-item active"><a href="{{ url_for('index') }}" class="nav-link">User</a></li>
+      <li class="nav-item"><a href="#" class="nav-link text-warning" onclick="toggleform(event)" data-value="#ai-tool-card">AI Tools ✨</a></li>
+    </ul>
+  </div>
+</nav>
+
+<br><br><br>
+
+<div class="container">
+
+  <!-- LOGIN FORM -->
+  <form method="post" action="{{ url_for('userlog') }}" id="form1" class="active slide-in-left">
+    <div class="glow-layer"></div>
+
+    <center>
+      <img class="rounded-circle" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDzdC8tyLdAaX5o6jygK9y6ruUdNcAyNqLjZTW1XuN6w&s" width="100" height="100">
+      <h2>User Login</h2>
+    </center>
+
+    <div class="form-group">
+      <label>Username:</label>
+      <input type="text" class="form-control" name="name" required>
+    </div>
+
+    <div class="form-group">
+      <label>Password:</label>
+      <input type="password" class="form-control" name="password" required>
+    </div>
+
+    <button type="submit">Submit</button>
+    <br><br>
+
+    <p class="text-center">New user?
+      <a href="#" data-value="#form2" onclick="toggleform(event)">Sign up</a>
+    </p>
+  </form>
+
+  <!-- SIGNUP FORM -->
+  <form method="post" action="{{ url_for('userreg') }}" id="form2">
+    <div class="glow-layer"></div>
+
+    <center>
+      <img class="rounded-circle" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDzdC8tyLdAaX5o6jygK9y6ruUdNcAyNqLjZTW1XuN6w&s" width="100" height="100">
+      <h2>User Registration</h2>
+    </center>
+
+    <div class="form-group">
+      <label>Username:</label>
+      <input type="text" class="form-control" name="name" required>
+    </div>
+
+    <div class="form-group">
+      <label>Email:</label>
+      <input type="email" class="form-control" name="email" required>
+    </div>
+
+    <div class="form-group">
+      <label>Mobile No.:</label>
+      <input type="tel" class="form-control" name="phone" required>
+    </div>
+
+    <div class="form-group">
+      <label>Password:</label>
+      <input type="password" class="form-control" name="password" required>
+    </div>
+
+    <button type="submit">Submit</button>
+    <br><br>
+
+    <p class="text-center">Already have an account?
+      <a href="#" data-value="#form1" onclick="toggleform(event)">Sign in</a>
+    </p>
+  </form>
+
+  <!-- NEW GEMINI AI TOOL CARD -->
+  <div id="ai-tool-card">
+    <div class="glow-layer"></div>
+    <center>
+      <img class="rounded-circle" src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png" width="100" height="100" style="border: 3px solid #1aff8c;">
+      <h2>Medical Report Simplifier</h2>
+      <p class="text-muted">Powered by Gemini AI ✨</p>
+    </center>
+
+    <div class="form-group">
+      <label>Paste Medical Text / Symptoms:</label>
+      <textarea id="ai-input" class="form-control" rows="4" placeholder="e.g. Sinus tachycardia with PVCs..."></textarea>
+    </div>
+
+    <button type="button" onclick="simplifyReport()">Simplify Report</button>
+    
+    <div id="ai-output" style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 10px; display: none;">
+      <h5 style="color: #1aff8c; font-weight: bold;">AI Analysis:</h5>
+      <p id="ai-output-text"></p>
+    </div>
+
+    <br><br>
+    <p class="text-center">Back to Login?
+      <a href="#" data-value="#form1" onclick="toggleform(event)">Click here</a>
+    </p>
+  </div>
+
+</div>
+
+<!-- CHAT WIDGET HTML -->
+<div class="chat-widget-btn" onclick="toggleChat()">
+  <i class="fas fa-robot fa-2x" style="color: white;"></i>
+</div>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <span>Dr. AI Assistant</span>
+    <span onclick="toggleChat()" style="cursor: pointer;">&times;</span>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-bubble bot-msg">Hello! I'm Dr. AI. Ask me about arrhythmia or heart health!</div>
+  </div>
+  <div class="chat-footer">
+    <input type="text" id="chatInput" class="form-control" placeholder="Type here..." style="border-radius: 20px; margin-right: 5px;" onkeypress="handleEnter(event)">
+    <button onclick="sendMessage()" style="width: 50px; padding: 0; border-radius: 50%;"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<!-- JS: Form Toggle + Tilt + Cursor Glow + AI -->
+<script>
+const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Set your Gemini API Key here
+
+function toggleform(e) {
+    e.preventDefault();
+
+    let target = e.target.getAttribute("data-value");
+    let f1 = document.getElementById("form1");
+    let f2 = document.getElementById("form2");
+    let fAI = document.getElementById("ai-tool-card");
+
+    // Hide all
+    f1.classList.remove("active", "slide-in-left", "slide-in-right");
+    f2.classList.remove("active", "slide-in-left", "slide-in-right");
+    fAI.classList.remove("active", "slide-in-left", "slide-in-right");
+
+    // Show target
+    let targetEl = document.querySelector(target);
+    targetEl.classList.add("active", "slide-in-right");
+}
+
+/* --- GEMINI API HELPER --- */
+async function callGemini(prompt) {
+    if (!apiKey) return "Please configure the API Key in the code.";
+    
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+    } catch (e) {
+        return "Error connecting to AI service.";
+    }
+}
+
+/* --- FEATURE 1: SIMPLIFIER --- */
+async function simplifyReport() {
+    const input = document.getElementById('ai-input').value;
+    const outBox = document.getElementById('ai-output');
+    const outText = document.getElementById('ai-output-text');
+    
+    if(!input) return;
+    
+    outBox.style.display = 'block';
+    outText.innerHTML = "Analyzing...";
+    
+    const prompt = `Simplify this medical text for a patient in plain English: "${input}"`;
+    const result = await callGemini(prompt);
+    
+    outText.innerText = result;
+}
+
+/* --- FEATURE 2: CHATBOT --- */
+function toggleChat() {
+    const win = document.getElementById('chatWindow');
+    win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function handleEnter(e) {
+    if(e.key === 'Enter') sendMessage();
+}
+
+async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const body = document.getElementById('chatBody');
+    const txt = input.value.trim();
+    if(!txt) return;
+
+    // User Msg
+    body.innerHTML += `<div class="chat-bubble user-msg">${txt}</div>`;
+    input.value = '';
+    body.scrollTop = body.scrollHeight;
+
+    // Bot Loading
+    const loadingId = 'load-' + Date.now();
+    body.innerHTML += `<div id="${loadingId}" class="chat-bubble bot-msg"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+    body.scrollTop = body.scrollHeight;
+
+    // API Call
+    const prompt = `You are a helpful heart health AI assistant. Answer briefly: ${txt}`;
+    const reply = await callGemini(prompt);
+
+    // Replace Loading with Reply
+    document.getElementById(loadingId).remove();
+    body.innerHTML += `<div class="chat-bubble bot-msg">${reply}</div>`;
+    body.scrollTop = body.scrollHeight;
+}
+
+/* ----------- 3D Tilt + Glow Follow Cursor ----------- */
+document.querySelectorAll("#form1, #form2, #ai-tool-card").forEach(card => {
+    const glow = card.querySelector(".glow-layer");
+
+    card.addEventListener("mousemove", e => {
+        let rect = card.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+
+        glow.style.setProperty("--x", x + "px");
+        glow.style.setProperty("--y", y + "px");
+
+        let tiltX = ((y - rect.height / 2) / rect.height) * 18;
+        let tiltY = ((x - rect.width / 2) / rect.width) * -18;
+
+        card.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+      });
+
+    card.addEventListener("mouseleave", () => {
+        card.style.transform = "rotateX(0deg) rotateY(0deg)";
+    });
+});
+</script>
+
+</body>
+</html>

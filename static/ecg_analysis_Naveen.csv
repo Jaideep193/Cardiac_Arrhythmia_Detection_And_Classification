@@ -1,0 +1,18 @@
+Parameter,Value
+Patient Name,Naveen
+Status,Sinus tachycardia
+Risk Level,LOW
+Age,0
+Gender,Male
+Height,0
+Weight,0
+QRS (ms),69.2
+QT (ms),377.9
+T (ms),138.4
+PR (ms),171.2
+P (ms),100.8
+Heart Rate (bpm),72.9
+QRS Deviation %,81.15
+Confidence Score,0.12
+Paper Speed (mm/s),25.0
+Amplitude Gain (mm/mV),10.0
