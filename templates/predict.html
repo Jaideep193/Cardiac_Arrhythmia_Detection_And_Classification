@@ -671,12 +671,9 @@
 
   <!-- Gemini API Integration Script -->
   <script>
-    // ⚠️ IMPORTANT: In a real production app, never expose your API key in client-side code.
-    // Use a backend proxy. For this demo/prototype, we use the key directly.
-    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // The execution environment provides this automatically in the preview, 
-                       // but for your Flask app, you'll need to insert your key here.
+    const apiKey = "{{ gemini_api_key | default('', true) }}";
 
-    const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+    const AI_MODEL = "gemini-2.5-flash";
     
     async function callGeminiAPI(prompt, spinnerId) {
       const spinner = document.getElementById(spinnerId);

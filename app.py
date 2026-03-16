@@ -12,16 +12,23 @@ import os
 import shutil
 import smtplib
 import re
+from dotenv import load_dotenv
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from email.mime.image import MIMEImage
-import telepot
+load_dotenv('.env.local')
 # Initialize Flask app early to avoid decorator errors
 app = Flask(__name__)
-app.secret_key = "replace_with_secure_random_value_if_desired"
+app.secret_key = os.environ.get("SECRET_KEY", "replace_with_secure_random_value_if_desired")
 app.config['SESSION_TYPE'] = 'filesystem'
+
+@app.context_processor
+def inject_public_config():
+    return {
+        "gemini_api_key": os.environ.get("GEMINI_API_KEY", "")
+    }
 
 # --- Simple SQLite hospital DB helpers (file: hospital.db) ---
 DB_PATH = 'hospital.db'
@@ -587,15 +594,12 @@ def upload_ecg_image():
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-SENDER_PASSWORD = "eicm bcia hzib pxlw"  # TODO: move to environment variable in production
 
 # ---------------------------
 # Secrets / Config
 # ---------------------------
-# Restore missing tokens used later in the file
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
-SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "mainproject146@gmail.com")
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "")
+SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD", "")
 # simple in-memory verification codes (doctor email -> code)
 VERIFICATION_CODES = {}
 
@@ -610,17 +614,6 @@ try:
 except Exception as e:
     svm = None
     print("❌ Failed to load model:", e)
-
-# Telegram bot (guarded)
-bot = None
-try:
-    if TELEGRAM_TOKEN:
-        bot = telepot.Bot(TELEGRAM_TOKEN)
-        print("✅ Telegram bot initialized")
-    else:
-        print("ℹ️ TELEGRAM_TOKEN not set; skipping Telegram bot init")
-except Exception as e:
-    print("❌ Telegram bot init failed:", e)
 
 # ---------------------------
 # Mappings & Constants
@@ -993,6 +986,10 @@ def generate_ecg_plot_simple(qrsint, qtint, tint, p_rint, pint):
 # Email Sender (with multiple inline images & attachments)
 # ---------------------------
 def send_email(receiver_email, subject, body, ecg_paths=None, attachments=None):
+    if not SENDER_EMAIL or not SENDER_PASSWORD:
+        print("⚠️ Email skipped: set SENDER_EMAIL and SENDER_PASSWORD environment variables")
+        return
+
     if ecg_paths is None:
         ecg_paths = []
     if attachments is None:
@@ -1413,23 +1410,7 @@ def predictPage():
         except Exception:
             cent = "N/A"
 
-        # --- notifications & email (send only if not Normal) ---
-        summary_text = (
-            f"Name: {name}\n"
-            f"Age: {age}\n"
-            f"Gender: {'Male' if Gender == 0 else 'Female'}\n"
-            f"QRS: {qrsint}\nQT: {qtint}\nT: {tint}\nPR: {p_rint}\nP: {pint}\n heart_rate: {heart_rate}\n"
-            f"Status: {res}\nRisk Level: {risk_level}\nDeviation: {cent}%\nHistory: {history}"
-        )
-
-        try:
-            if result != 1:  # send more urgent message
-                bot.sendMessage(TELEGRAM_CHAT_ID, summary_text)
-            else:
-                bot.sendMessage(TELEGRAM_CHAT_ID, f"Name: {name}\nStatus: Normal\nRisk Level: No Risk")
-        except Exception as e:
-            print("❌ Telegram send failed:", e)
-
+        # --- email summary ---
         email_body = (
             f"Name: {name}\n"
             f"Age: {age}\n"

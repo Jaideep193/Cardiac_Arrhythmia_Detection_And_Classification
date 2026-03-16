@@ -228,8 +228,8 @@
   
   <script>
     // API CONFIGURATION
-    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Insert Key Here or Configure Backend Proxy
-    const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+    const apiKey = "{{ gemini_api_key | default('', true) }}";
+    const AI_MODEL = "gemini-2.5-flash";
 
     async function callGemini(prompt) {
         const spinner = document.getElementById('ai-spinner');

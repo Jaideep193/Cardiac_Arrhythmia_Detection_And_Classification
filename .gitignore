@@ -1,0 +1,12 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local environment files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Local runtime artifacts
+hospital.db
+*.log

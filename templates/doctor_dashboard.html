@@ -1101,13 +1101,13 @@
   <!-- GEMINI API INTEGRATION SCRIPT -->
   <script>
     // --- GEMINI CONFIGURATION ---
-    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // API Key will be injected by the environment
+    const apiKey = "{{ gemini_api_key | default('', true) }}";
     
     // Helper to call Gemini API
     async function callGeminiAPI(promptText) {
       // REMOVED: Validation logic to allow environment injection
       
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       
       const payload = {
         contents: [{ parts: [{ text: promptText }] }]

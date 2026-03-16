@@ -868,7 +868,7 @@
      */
      
     // --- GEMINI API SETUP ---
-    const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Injected by environment
+    const apiKey = "{{ gemini_api_key | default('', true) }}";
     
     // Helper to call Gemini
     async function callGeminiAPI(prompt) {
@@ -878,7 +878,7 @@
             return null;
         }
         
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
         try {
             const response = await fetch(url, {

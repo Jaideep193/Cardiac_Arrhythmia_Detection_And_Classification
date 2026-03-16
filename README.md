@@ -78,3 +78,13 @@ Notes:
 
 - `init_db()` in `app.py` will create `hospital.db` automatically on first run.
 - Place or train a model at `NOTEBOOK_FILES/model.pkl` if you want model-based predictions.
+
+## Environment Variables (required for private keys)
+
+Create a local `.env.local` file (or set OS environment variables) with:
+
+- `SENDER_EMAIL`
+- `SENDER_PASSWORD`
+- `GEMINI_API_KEY`
+
+Use `.env.example` as a template. Do not commit real credentials.

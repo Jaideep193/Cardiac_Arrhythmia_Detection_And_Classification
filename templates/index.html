@@ -348,7 +348,7 @@
 
 <!-- JS: Form Toggle + Tilt + Cursor Glow + AI -->
 <script>
-const apiKey = "AIzaSyCpwYQPTbvMsEcjkXjm8P25h32VD2jSm-o"; // Set your Gemini API Key here
+const apiKey = "{{ gemini_api_key | default('', true) }}";
 
 function toggleform(e) {
     e.preventDefault();
@@ -372,7 +372,7 @@ function toggleform(e) {
 async function callGemini(prompt) {
     if (!apiKey) return "Please configure the API Key in the code.";
     
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     try {
         const response = await fetch(url, {
             method: 'POST',
