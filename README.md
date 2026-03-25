@@ -30,7 +30,7 @@ This repository implements a state-of-the-art **ECG Arrhythmia Detection and Cla
 | **📊 Signal Visualization** | Interactive Plotly dashboards for wave analysis (P, QRS, T waves). |
 | **📄 Clinical Reports** | Automated PDF generation with patient data and risk assessment. |
 | **👨‍⚕️ Doctor Portal** | Dedicated dashboard for patient management and appointment scheduling. |
-| **🔔 Instant Alerts** | Integrated Telegram and Email notifications for high-risk cardiac events. |
+| **🔔 Instant Alerts** |  Email notifications for high-risk cardiac events. |
 
 ---
 
@@ -71,7 +71,7 @@ graph LR
     subgraph Clinical_Output ["🏥 Clinical Output"]
         K[(SQLite Databases)]
         L[PDF Medical Report]
-        M[Telegram/Email Alerts]
+        M[Email Alerts]
     end
 
     A & B & C -.-> D
@@ -115,7 +115,7 @@ graph LR
     end
 
     subgraph Notify ["📩 Notifications"]
-        Tele[Telegram API]
+        
         Mail[SMTP Email]
     end
 
@@ -147,7 +147,7 @@ graph LR
 - **Image Analysis**: OpenCV, Matplotlib
 - **Frontend**: HTML5, CSS3, JavaScript (Plotly.js for signals)
 - **Reporting**: ReportLab (Professional PDF Engine)
-- **Communication**: SMTP (Email), Telegram Bot API
+- **Communication**: SMTP (Email)
 
 ---
 
