@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/Jaideep193/Detection_And_Classification_Of_Cardiac_Arrhythmia_Using_Machine_Learning?color=blue&style=for-the-badge" alt="License" />
+  
   <img src="https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python" alt="Python" />
   <img src="https://img.shields.io/badge/Flask-Framework-red?style=for-the-badge&logo=flask" alt="Flask" />
-  <img src="https://img.shields.io/github/stars/Jaideep193/Detection_And_Classification_Of_Cardiac_Arrhythmia_Using_Machine_Learning?style=for-the-badge" alt="Stars" />
+  
 </p>
 
 ---
