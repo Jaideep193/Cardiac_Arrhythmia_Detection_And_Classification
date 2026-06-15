@@ -26,7 +26,7 @@ This repository implements a state-of-the-art **ECG Arrhythmia Detection and Cla
 | Feature | Description |
 | :--- | :--- |
 | **🔍 Multi-Source Input** | Support for ECG CSVs, high-res images, and manual physiological data. |
-| **🧠 Weighted KNN Intelligence** | Classifies 13+ arrhythmia types with high precision using a pre-trained Weighted KNN model. |
+| **🧠 Weighted KNN Intelligence** | Classifies 16 arrhythmia types with high precision using a pre-trained Weighted KNN model. |
 | **📊 Signal Visualization** | Interactive Plotly dashboards for wave analysis (P, QRS, T waves). |
 | **📄 Clinical Reports** | Automated PDF generation with patient data and risk assessment. |
 | **👨‍⚕️ Doctor Portal** | Dedicated dashboard for patient management and appointment scheduling. |
