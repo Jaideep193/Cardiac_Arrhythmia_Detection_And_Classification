@@ -171,5 +171,5 @@ graph LR
 
 ---
 
-**Developed with ❤️ by Jaideep M C,Dhanush T**  
+**Developed with ❤️ by Jaideep M C and Dhanush T**  
 *Empowering Healthcare with Intelligent Machine Learning*
