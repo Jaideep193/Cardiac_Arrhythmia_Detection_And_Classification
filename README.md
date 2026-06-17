@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  
+
   <img src="https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python" alt="Python" />
   <img src="https://img.shields.io/badge/Flask-Framework-red?style=for-the-badge&logo=flask" alt="Flask" />
   
