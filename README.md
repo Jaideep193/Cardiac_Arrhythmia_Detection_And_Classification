@@ -158,7 +158,7 @@ graph LR
 - `datasets/ecg_images/`: Directory for ECG image data.
 - `static/`: Assets including CSS, images, and generated reports.
 - `templates/`: Jinja2 templates for the clinical web interface.
-- `requirements.txt`: Python dependencies.
+- `requirements.txt`: Python dependencies.- `hospital.db`: SQLite database for hospital/patient records.- `user_data.db`: SQLite database for user authentication data.- `.env.example`: Template for environment variables (API keys, secrets).- `avg.csv` / `avgg.py`: ECG feature averaging utilities.- `calibrate_ecg_from_kaggle.py`: Script to calibrate ECG data from Kaggle datasets.- `hospital.db`: SQLite database for hospital/patient records.- `user_data.db`: SQLite database for user authentication data.- `.env.example`: Template for environment variables (API keys, secrets).- `hospital.db`: SQLite database for hospital/patient records.
 
 ---
 
